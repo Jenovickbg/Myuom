@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MyUOM - Université de Mbujimayi{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    
+    <style>
+        :root {
+            --uom-blue: #104276;
+            --uom-yellow: #ebe95d;
+            --uom-gray: #545454;
+            --uom-red: #bf1d2a;
+            --uom-white: #ffffff;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+        }
+        
+        /* Navbar */
+        .navbar-uom {
+            background-color: var(--uom-blue);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .navbar-uom .navbar-brand {
+            color: var(--uom-white) !important;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+        
+        .navbar-uom .nav-link {
+            color: var(--uom-white) !important;
+            margin: 0 10px;
+            transition: color 0.3s;
+        }
+        
+        .navbar-uom .nav-link:hover {
+            color: var(--uom-yellow) !important;
+        }
+        
+        /* Boutons */
+        .btn-uom-primary {
+            background-color: var(--uom-blue);
+            border-color: var(--uom-blue);
+            color: var(--uom-white);
+        }
+        
+        .btn-uom-primary:hover {
+            background-color: #0d3559;
+            border-color: #0d3559;
+            color: var(--uom-white);
+        }
+        
+        .btn-uom-secondary {
+            background-color: var(--uom-yellow);
+            border-color: var(--uom-yellow);
+            color: var(--uom-blue);
+            font-weight: 500;
+        }
+        
+        .btn-uom-secondary:hover {
+            background-color: #d4d14f;
+            border-color: #d4d14f;
+            color: var(--uom-blue);
+        }
+        
+        .btn-uom-danger {
+            background-color: var(--uom-red);
+            border-color: var(--uom-red);
+            color: var(--uom-white);
+        }
+        
+        .btn-uom-danger:hover {
+            background-color: #a01824;
+            border-color: #a01824;
+            color: var(--uom-white);
+        }
+        
+        /* Cards */
+        .card-uom {
+            border: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .card-uom:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .card-header-uom {
+            background-color: var(--uom-blue);
+            color: var(--uom-white);
+            border-radius: 10px 10px 0 0 !important;
+            font-weight: bold;
+        }
+        
+        /* Footer */
+        .footer-uom {
+            background-color: var(--uom-blue);
+            color: var(--uom-white);
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        
+        /* Alerts */
+        .alert-uom-danger {
+            background-color: #f8d7da;
+            border-color: var(--uom-red);
+            color: var(--uom-red);
+        }
+        
+        .alert-uom-success {
+            background-color: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        
+        .alert-uom-info {
+            background-color: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        
+        /* Texte secondaire */
+        .text-uom-gray {
+            color: var(--uom-gray);
+        }
+        
+        /* Container principal */
+        .main-container {
+            min-height: calc(100vh - 200px);
+            padding-top: 30px;
+            padding-bottom: 30px;
+        }
+        
+        /* Formulaires */
+        .form-control:focus {
+            border-color: var(--uom-blue);
+            box-shadow: 0 0 0 0.2rem rgba(16, 66, 118, 0.25);
+        }
+        
+        /* Badge */
+        .badge-uom-primary {
+            background-color: var(--uom-blue);
+        }
+        
+        .badge-uom-yellow {
+            background-color: var(--uom-yellow);
+            color: var(--uom-blue);
+        }
+        
+        .badge-uom-danger {
+            background-color: var(--uom-red);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    
+    {% load static %}
+    
+    {% if user.is_authenticated %}
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-uom">
+        <div class="container-fluid">
+            <a class="navbar-brand d-flex align-items-center" href="{% if user.is_admin_user or user.is_superuser %}{% url 'admin_dashboard' %}{% elif user.is_teacher %}{% url 'teacher_dashboard' %}{% else %}{% url 'student_dashboard' %}{% endif %}">
+                <img src="{% static 'images/logo-UOM.jpg' %}" alt="Logo UOM" height="40" class="me-2" style="border-radius: 5px;">
+                <span>MyUOM</span>
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    {% block navbar_links %}{% endblock %}
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Mon profil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert {% if message.tags == 'error' %}alert-uom-danger{% elif message.tags == 'success' %}alert-uom-success{% else %}alert-uom-info{% endif %} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Contenu principal -->
+    <div class="container main-container">
+        {% block content %}{% endblock %}
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer-uom text-center">
+        <div class="container">
+            <p class="mb-0">&copy; 2025 Université de Mbujimayi (UOM) - MyUOM - Tous droits réservés</p>
+            <small class="text-uom-gray">Système de gestion universitaire</small>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
+

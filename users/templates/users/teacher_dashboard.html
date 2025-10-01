@@ -1,0 +1,50 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Tableau de bord Enseignant - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link active" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'cours:support_create' %}"><i class="bi bi-upload"></i> Publier Support</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'travaux:teacher_travaux_list' %}"><i class="bi bi-file-earmark-text"></i> Mes Travaux</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12">
+    <h2 style="color: var(--uom-blue);"><i class="bi bi-person-workspace"></i> Tableau de bord Enseignant</h2>
+    <p class="text-uom-gray">Bienvenue {{ user.get_full_name|default:user.username }}</p>
+    <hr>
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-md-4">
+    <div class="card card-uom h-100">
+      <div class="card-body">
+        <h5 class="card-title" style="color: var(--uom-blue);"><i class="bi bi-book"></i> Mes Cours</h5>
+        <p class="text-uom-gray">Consultez la liste de vos cours et leurs informations.</p>
+        <a href="{% url 'cours:teacher_courses' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-arrow-right"></i> Ouvrir</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-uom h-100">
+      <div class="card-body">
+        <h5 class="card-title" style="color: var(--uom-blue);"><i class="bi bi-upload"></i> Publier un support</h5>
+        <p class="text-uom-gray">Mettez en ligne des supports (cours, TP, TD, corrigés).</p>
+        <a href="{% url 'cours:support_create' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-upload"></i> Publier</a>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="card card-uom h-100">
+      <div class="card-body">
+        <h5 class="card-title" style="color: var(--uom-blue);"><i class="bi bi-file-earmark-text"></i> Mes Travaux</h5>
+        <p class="text-uom-gray">Créez, publiez et gérez vos TP/TD et corrections.</p>
+        <a href="{% url 'travaux:teacher_travaux_list' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-plus-circle"></i> Gérer</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

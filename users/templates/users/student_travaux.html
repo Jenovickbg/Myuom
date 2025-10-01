@@ -1,0 +1,104 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Mes Travaux - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-speedometer2"></i> Accueil</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_cours' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12 d-flex align-items-center justify-content-between">
+    <div>
+      <h3 style="color: var(--uom-blue);"><i class="bi bi-file-earmark-text"></i> Travaux</h3>
+      <p class="text-uom-gray mb-0">Travaux ouverts, fermés et historique de mes remises</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card card-uom h-100">
+      <div class="card-header card-header-uom"><i class="bi bi-unlock"></i> Travaux ouverts</div>
+      <div class="card-body">
+        {% if travaux_ouverts %}
+          <div class="list-group">
+            {% for t in travaux_ouverts %}
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1" style="color: var(--uom-blue);">{{ t.titre }}</h6>
+                <small class="text-muted"><i class="bi bi-clock"></i> {{ t.date_limite_remise|date:"d/m/Y H:i" }}</small>
+              </div>
+              <p class="mb-1 text-uom-gray">{{ t.get_type_travail_display }} · {{ t.enseignant.get_full_name|default:t.enseignant.username }}</p>
+              <span class="badge bg-success">Ouvert</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-center text-uom-gray">Aucun travail ouvert.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  
+  <div class="col-lg-6">
+    <div class="card card-uom h-100">
+      <div class="card-header card-header-uom"><i class="bi bi-lock"></i> Travaux fermés</div>
+      <div class="card-body">
+        {% if travaux_fermes %}
+          <div class="list-group">
+            {% for t in travaux_fermes %}
+            <div class="list-group-item">
+              <div class="d-flex w-100 justify-content-between">
+                <h6 class="mb-1" style="color: var(--uom-blue);">{{ t.titre }}</h6>
+                <small class="text-muted"><i class="bi bi-clock-history"></i> Limite {{ t.date_limite_remise|date:"d/m/Y H:i" }}</small>
+              </div>
+              <p class="mb-1 text-uom-gray">{{ t.get_type_travail_display }} · {{ t.enseignant.get_full_name|default:t.enseignant.username }}</p>
+              <span class="badge bg-secondary">Fermé</span>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p class="text-center text-uom-gray">Aucun travail fermé.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-12">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom"><i class="bi bi-clock-history"></i> Mes remises</div>
+      <div class="card-body">
+        {% if remises %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Titre</th><th>Date remise</th><th>Statut</th><th>Note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for r in remises %}
+              <tr>
+                <td>{{ r.travail.titre }}</td>
+                <td>{{ r.date_remise|date:"d/m/Y H:i" }}</td>
+                <td><span class="badge bg-{{ r.get_statut_display_color }}">{{ r.get_statut_display }}</span></td>
+                <td>{% if r.note %}{{ r.note }} / {{ r.travail.note_maximale }}{% else %}<span class="text-uom-gray">—</span>{% endif %}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-center text-uom-gray">Aucune remise enregistrée.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

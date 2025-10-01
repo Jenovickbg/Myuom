@@ -1,0 +1,118 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Mon Profil - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-speedometer2"></i> Accueil</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_cours' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'student_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-7">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom">
+        <h5 class="mb-0"><i class="bi bi-person-lines-fill"></i> Mes informations</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          <!-- En-tête profil (photo + infos clés) -->
+          <div class="row align-items-center mb-4">
+            <div class="col-md-3 mb-3 text-center">
+              {% if profile_form.instance.photo %}
+                <img src="{{ profile_form.instance.photo.url }}" alt="Photo" class="img-thumbnail" style="width: 120px; height: 120px; border-radius: 50%; object-fit: cover;">
+              {% else %}
+                <div class="border d-flex align-items-center justify-content-center" style="width:120px;height:120px;background:#fafafa;border-radius:50%;">
+                  <i class="bi bi-person" style="font-size: 3rem; color:#ccc;"></i>
+                </div>
+              {% endif %}
+            </div>
+            <div class="col-md-9">
+              <h5 class="mb-1" style="color: var(--uom-blue);">{{ user.get_full_name|default:user.username }}</h5>
+              <div class="text-uom-gray">
+                <span class="me-3"><i class="bi bi-person-badge"></i> {{ user.matricule }}</span>
+                {% if user.email %}<span class="me-3"><i class="bi bi-envelope"></i> {{ user.email }}</span>{% endif %}
+                {% if user.student_profile and user.student_profile.niveau %}<span class="me-3"><i class="bi bi-mortarboard"></i> {{ user.student_profile.niveau }}</span>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload photo -->
+          <div class="row mb-4">
+            <div class="col-md-3"></div>
+            <div class="col-md-9">
+              <label class="form-label">Téléverser une photo</label>
+              {{ profile_form.photo }}
+              <small class="text-uom-gray d-block">Formats recommandés: JPG/PNG, ≤ 2 Mo</small>
+            </div>
+          </div>
+
+          <h6 class="mb-3" style="color: var(--uom-blue);"><i class="bi bi-person"></i> Informations personnelles</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Prénom</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nom</label>
+              {{ form.last_name }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date de naissance</label>
+              {{ form.birth_date }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Lieu de naissance</label>
+              {{ form.birth_place }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Email</label>
+              {{ form.email }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Téléphone</label>
+              {{ form.phone }}
+            </div>
+          </div>
+
+          <hr class="my-4">
+          <hr class="my-4">
+          <h6 class="mb-3" style="color: var(--uom-blue);"><i class="bi bi-mortarboard"></i> Informations académiques</h6>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Niveau</label>
+              {{ profile_form.niveau }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Filière</label>
+              {{ profile_form.filiere }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Contact d'urgence</label>
+              {{ profile_form.emergency_contact }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Téléphone d'urgence</label>
+              {{ profile_form.emergency_phone }}
+            </div>
+          </div>
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-uom-primary"><i class="bi bi-save"></i> Enregistrer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

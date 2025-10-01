@@ -1,0 +1,57 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Mes Résultats - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-speedometer2"></i> Accueil</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_cours' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12 d-flex align-items-center justify-content-between">
+    <div>
+      <h3 style="color: var(--uom-blue);"><i class="bi bi-graph-up"></i> Mes Résultats</h3>
+      <p class="text-uom-gray mb-0">Notes par Unité d'Enseignement (UE)</p>
+    </div>
+  </div>
+</div>
+
+{% if ue_to_notes %}
+  {% for ue, notes in ue_to_notes.items %}
+  <div class="card card-uom mb-3">
+    <div class="card-header card-header-uom d-flex justify-content-between">
+      <span>{{ ue.code }} · {{ ue.nom }}</span>
+      <span class="badge badge-uom-primary">{{ ue.get_semestre_display }}</span>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th>Type</th><th>Titre</th><th>Note</th><th>Coefficient</th><th>Date</th><th>Enseignant</th>
+            </tr>
+          </thead>
+          <tbody>
+          {% for n in notes %}
+            <tr>
+              <td>{{ n.get_type_note_display }}</td>
+              <td>{{ n.titre }}</td>
+              <td><strong>{{ n.note_obtenue }}</strong> / {{ n.note_maximale }}</td>
+              <td>{{ n.coefficient }}</td>
+              <td>{{ n.date_evaluation|date:"d/m/Y" }}</td>
+              <td>{{ n.enseignant.get_full_name|default:n.enseignant.username }}</td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <p class="text-center text-uom-gray">Aucune note disponible pour le moment.</p>
+{% endif %}
+{% endblock %}

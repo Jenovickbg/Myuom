@@ -1,0 +1,102 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Créer un Travail - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'travaux:teacher_travaux_list' %}"><i class="bi bi-file-earmark-text"></i> Mes Travaux</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'travaux:teacher_travail_create' %}"><i class="bi bi-plus-circle"></i> Créer Travail</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom">
+        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Créer un nouveau travail</h5>
+      </div>
+      <div class="card-body">
+        <form method="post" enctype="multipart/form-data">
+          {% csrf_token %}
+          
+          <div class="row">
+            <div class="col-md-8 mb-3">
+              <label class="form-label">Titre</label>
+              {{ form.titre }}
+            </div>
+            <div class="col-md-4 mb-3">
+              <label class="form-label">Type</label>
+              {{ form.type_travail }}
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Niveau</label>
+              {{ form.niveau }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Filière</label>
+              {{ form.filiere }}
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Consignes</label>
+            {{ form.consignes }}
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date limite de remise</label>
+              {{ form.date_limite_remise }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date limite de correction</label>
+              {{ form.date_limite_correction }}
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Note maximale</label>
+              {{ form.note_maximale }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Coefficient</label>
+              {{ form.coefficient }}
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="form-label">Fichier de consignes (optionnel)</label>
+            {{ form.fichier_consignes }}
+            <small class="text-uom-gray d-block">Extensions autorisées: pdf, doc(x), ppt(x), zip, rar</small>
+          </div>
+          
+          <div class="mb-3">
+            <div class="form-check">
+              {{ form.is_visible_etudiants }}
+              <label class="form-check-label">Visible pour les étudiants</label>
+            </div>
+          </div>
+
+          {% if form.non_field_errors %}
+          <div class="alert alert-uom-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-uom-primary"><i class="bi bi-check-circle"></i> Créer le travail</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

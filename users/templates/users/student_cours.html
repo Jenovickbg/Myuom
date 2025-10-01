@@ -1,0 +1,84 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Mes Cours - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-speedometer2"></i> Accueil</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'student_cours' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col-12 d-flex align-items-center justify-content-between">
+    <div>
+      <h3 style="color: var(--uom-blue);"><i class="bi bi-book"></i> Mes Cours</h3>
+      <p class="text-uom-gray mb-0">Liste des cours auxquels vous êtes inscrit et supports récents</p>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-list-task"></i> Inscriptions</span>
+      </div>
+      <div class="card-body">
+        {% if inscriptions %}
+        <div class="table-responsive">
+          <table class="table align-middle">
+            <thead>
+              <tr>
+                <th>Code</th><th>Titre</th><th>Enseignant</th><th>Type</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for ins in inscriptions %}
+              <tr>
+                <td><span class="badge badge-uom-primary">{{ ins.cours.code }}</span></td>
+                <td>{{ ins.cours.titre }}</td>
+                <td>{{ ins.cours.enseignant.get_full_name|default:ins.cours.enseignant.username }}</td>
+                <td><span class="badge badge-uom-yellow">{{ ins.cours.get_type_cours_display }}</span></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% else %}
+          <p class="text-center text-uom-gray">Aucune inscription trouvée.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card card-uom h-100">
+      <div class="card-header card-header-uom d-flex justify-content-between align-items-center">
+        <span><i class="bi bi-file-earmark-arrow-down"></i> Supports récents</span>
+      </div>
+      <div class="card-body">
+        {% if supports_recents %}
+          <ul class="list-group list-group-flush">
+            {% for s in supports_recents %}
+            <li class="list-group-item d-flex justify-content-between align-items-start">
+              <div class="ms-2 me-auto">
+                <div class="fw-bold" style="color: var(--uom-blue);">{{ s.cours.code }} · {{ s.titre }}</div>
+                <small class="text-uom-gray">{{ s.enseignant.get_full_name|default:s.enseignant.username }} · {{ s.date_publication|date:"d/m/Y H:i" }}</small>
+              </div>
+              <a class="btn btn-sm btn-uom-primary" href="{{ s.fichier.url }}">
+                <i class="bi bi-download"></i>
+              </a>
+            </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="text-center text-uom-gray">Aucun support récent.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

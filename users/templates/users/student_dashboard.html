@@ -1,0 +1,189 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Tableau de bord Étudiant - MyUOM{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'student_dashboard' %}">
+        <i class="bi bi-speedometer2"></i> Accueil
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'student_cours' %}">
+        <i class="bi bi-book"></i> Mes Cours
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'student_travaux' %}">
+        <i class="bi bi-file-earmark-text"></i> Travaux
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'student_resultats' %}">
+        <i class="bi bi-graph-up"></i> Résultats
+    </a>
+</li>
+<li class="nav-item">
+    <a class="nav-link" href="{% url 'student_profil' %}">
+        <i class="bi bi-person"></i> Mon Profil
+    </a>
+</li>
+{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 style="color: var(--uom-blue);">
+            <i class="bi bi-person-badge"></i> Bienvenue, {{ user.get_full_name|default:user.username }} !
+        </h2>
+        <p class="text-uom-gray">Tableau de bord étudiant - {{ user.student_profile.niveau|default:"Niveau non défini" }}</p>
+        <hr>
+    </div>
+</div>
+
+<!-- Statistiques rapides -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-book-fill" style="font-size: 2.5rem; color: var(--uom-blue);"></i>
+                <h4 class="mt-2" style="color: var(--uom-blue);">{{ mes_cours_count|default:0 }}</h4>
+                <p class="text-uom-gray mb-0">Mes Cours</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-file-earmark-text-fill" style="font-size: 2.5rem; color: var(--uom-yellow);"></i>
+                <h4 class="mt-2" style="color: var(--uom-blue);">{{ travaux_en_cours_count|default:0 }}</h4>
+                <p class="text-uom-gray mb-0">Travaux en cours</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-clock-fill" style="font-size: 2.5rem; color: var(--uom-red);"></i>
+                <h4 class="mt-2" style="color: var(--uom-blue);">{{ travaux_urgents_count|default:0 }}</h4>
+                <p class="text-uom-gray mb-0">À rendre bientôt</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-graph-up-arrow" style="font-size: 2.5rem; color: #28a745;"></i>
+                <h4 class="mt-2" style="color: var(--uom-blue);">{{ moyenne_generale|default:"--" }}</h4>
+                <p class="text-uom-gray mb-0">Moyenne générale</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Contenu principal -->
+<div class="row">
+    <!-- Mes cours récents -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-uom">
+            <div class="card-header card-header-uom">
+                <h5 class="mb-0"><i class="bi bi-book"></i> Mes Cours Récents</h5>
+            </div>
+            <div class="card-body">
+                {% if mes_cours %}
+                    {% for cours in mes_cours %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2" style="background-color: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <h6 class="mb-1" style="color: var(--uom-blue);">{{ cours.cours.code }}</h6>
+                            <p class="mb-0 text-uom-gray small">{{ cours.cours.titre }}</p>
+                            <small class="text-muted">{{ cours.cours.enseignant.get_full_name }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge badge-uom-primary">{{ cours.cours.get_type_cours_display }}</span>
+                            <br>
+                            <small class="text-muted">{{ cours.cours.date_debut|date:"d/m/Y" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'student_cours' %}" class="btn btn-uom-primary btn-sm">
+                            <i class="bi bi-arrow-right"></i> Voir tous mes cours
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-center text-uom-gray">Aucun cours inscrit pour le moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Travaux à rendre -->
+    <div class="col-md-6 mb-4">
+        <div class="card card-uom">
+            <div class="card-header card-header-uom">
+                <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Travaux à Rendre</h5>
+            </div>
+            <div class="card-body">
+                {% if travaux_a_rendre %}
+                    {% for travail in travaux_a_rendre %}
+                    <div class="d-flex justify-content-between align-items-center mb-3 p-2" style="background-color: #f8f9fa; border-radius: 8px;">
+                        <div>
+                            <h6 class="mb-1" style="color: var(--uom-blue);">{{ travail.titre }}</h6>
+                            <p class="mb-0 text-uom-gray small">{{ travail.get_type_travail_display }}</p>
+                            <small class="text-muted">{{ travail.enseignant.get_full_name }}</small>
+                        </div>
+                        <div class="text-end">
+                            {% if travail.is_remise_ouverte %}
+                                <span class="badge badge-success">Ouvert</span>
+                            {% else %}
+                                <span class="badge badge-danger">Fermé</span>
+                            {% endif %}
+                            <br>
+                            <small class="text-muted">{{ travail.date_limite_remise|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'student_travaux' %}" class="btn btn-uom-primary btn-sm">
+                            <i class="bi bi-arrow-right"></i> Voir tous les travaux
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-center text-uom-gray">Aucun travail à rendre pour le moment.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Notifications récentes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card card-uom">
+            <div class="card-header card-header-uom">
+                <h5 class="mb-0"><i class="bi bi-bell"></i> Notifications Récentes</h5>
+            </div>
+            <div class="card-body">
+                {% if notifications %}
+                    {% for notification in notifications %}
+                    <div class="d-flex align-items-start mb-3 p-3" style="background-color: #f8f9fa; border-radius: 8px; border-left: 4px solid var(--uom-blue);">
+                        <i class="bi bi-info-circle-fill me-3" style="color: var(--uom-blue);"></i>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1" style="color: var(--uom-blue);">{{ notification.titre }}</h6>
+                            <p class="mb-1 text-uom-gray">{{ notification.contenu }}</p>
+                            <small class="text-muted">{{ notification.date_creation|date:"d/m/Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-uom-gray">Aucune notification récente.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
