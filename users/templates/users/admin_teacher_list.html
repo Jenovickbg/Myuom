@@ -1,0 +1,77 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Enseignants - Administration{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'admin_student_list' %}"><i class="bi bi-people"></i> Étudiants</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'admin_teacher_list' %}"><i class="bi bi-person-workspace"></i> Enseignants</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 style="color: var(--uom-blue);"><i class="bi bi-person-workspace"></i> Enseignants</h3>
+  <a href="{% url 'admin_teacher_create' %}" class="btn btn-uom-primary"><i class="bi bi-person-plus"></i> Créer</a>
+</div>
+
+<form method="get" class="mb-3">
+  <div class="input-group">
+    <input type="text" name="search" class="form-control" placeholder="Rechercher (matricule, nom, email)" value="{{ search_query }}">
+    <button class="btn btn-uom-primary" type="submit"><i class="bi bi-search"></i></button>
+  </div>
+</form>
+
+<div class="card card-uom">
+  <div class="card-body">
+    {% if teachers %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th><a href="?order=matricule{% if search_query %}&search={{ search_query }}{% endif %}" class="text-decoration-none">Matricule</a></th>
+            <th><a href="?order=name{% if search_query %}&search={{ search_query }}{% endif %}" class="text-decoration-none">Nom</a></th>
+            <th>Email</th>
+            <th>Département</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in teachers %}
+          <tr>
+            <td><span class="badge badge-uom-primary">{{ t.matricule }}</span></td>
+            <td>{{ t.get_full_name|default:t.username }}</td>
+            <td>{{ t.email|default:'—' }}</td>
+            <td>{{ t.teacher_profile.department|default:'—' }}</td>
+            <td class="text-end">
+              <a href="{% url 'admin_teacher_detail' t.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    <nav aria-label="Pagination" class="mt-3">
+      <ul class="pagination justify-content-center">
+        {% if teachers.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ teachers.previous_page_number }}&order={{ order }}&search={{ search_query }}">Précédent</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+        {% endif %}
+
+        <li class="page-item disabled"><span class="page-link">Page {{ teachers.number }} / {{ teachers.paginator.num_pages }}</span></li>
+
+        {% if teachers.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ teachers.next_page_number }}&order={{ order }}&search={{ search_query }}">Suivant</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% else %}
+      <p class="text-center text-uom-gray mb-0">Aucun enseignant.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

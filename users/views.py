@@ -3,6 +3,7 @@ from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import csv
 from .models import CustomUser, StudentProfile, TeacherProfile
 from .forms import (
@@ -239,11 +240,30 @@ def admin_student_list(request):
             Q(last_name__icontains=search_query)
         )
     
-    students = students.order_by('-created_at')
-    
+    # Tri
+    order = request.GET.get('order', 'created')
+    if order == 'name':
+        students = students.order_by('last_name', 'first_name')
+    elif order == 'matricule':
+        students = students.order_by('matricule')
+    else:
+        students = students.order_by('-created_at')
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(students, 10)
+    try:
+        students_page = paginator.page(page)
+    except PageNotAnInteger:
+        students_page = paginator.page(1)
+    except EmptyPage:
+        students_page = paginator.page(paginator.num_pages)
+
     return render(request, 'users/admin_student_list.html', {
-        'students': students,
+        'students': students_page,
         'search_query': search_query,
+        'order': order,
+        'paginator': paginator,
     })
 
 
@@ -381,11 +401,30 @@ def admin_teacher_list(request):
             Q(last_name__icontains=search_query)
         )
     
-    teachers = teachers.order_by('-created_at')
-    
+    # Tri
+    order = request.GET.get('order', 'created')
+    if order == 'name':
+        teachers = teachers.order_by('last_name', 'first_name')
+    elif order == 'matricule':
+        teachers = teachers.order_by('matricule')
+    else:
+        teachers = teachers.order_by('-created_at')
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(teachers, 10)
+    try:
+        teachers_page = paginator.page(page)
+    except PageNotAnInteger:
+        teachers_page = paginator.page(1)
+    except EmptyPage:
+        teachers_page = paginator.page(paginator.num_pages)
+
     return render(request, 'users/admin_teacher_list.html', {
-        'teachers': teachers,
+        'teachers': teachers_page,
         'search_query': search_query,
+        'order': order,
+        'paginator': paginator,
     })
 
 

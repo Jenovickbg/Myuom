@@ -1,0 +1,82 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Étudiants - Administration{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'admin_student_list' %}"><i class="bi bi-people"></i> Étudiants</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'admin_teacher_list' %}"><i class="bi bi-person-workspace"></i> Enseignants</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 style="color: var(--uom-blue);"><i class="bi bi-people"></i> Étudiants</h3>
+  <div class="d-flex gap-2">
+    <a href="{% url 'admin_student_bulk_import' %}" class="btn btn-uom-secondary"><i class="bi bi-file-earmark-arrow-up"></i> Import CSV</a>
+    <a href="{% url 'admin_student_create' %}" class="btn btn-uom-primary"><i class="bi bi-person-plus"></i> Créer</a>
+  </div>
+</div>
+
+<form method="get" class="mb-3">
+  <div class="input-group">
+    <input type="text" name="search" class="form-control" placeholder="Rechercher (matricule, nom, email)" value="{{ search_query }}">
+    <button class="btn btn-uom-primary" type="submit"><i class="bi bi-search"></i></button>
+  </div>
+</form>
+
+<div class="card card-uom">
+  <div class="card-body">
+    {% if students %}
+    <div class="table-responsive">
+      <table class="table align-middle">
+        <thead>
+          <tr>
+            <th><a href="?order=matricule{% if search_query %}&search={{ search_query }}{% endif %}" class="text-decoration-none">Matricule</a></th>
+            <th><a href="?order=name{% if search_query %}&search={{ search_query }}{% endif %}" class="text-decoration-none">Nom</a></th>
+            <th>Email</th>
+            <th>Actif</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for s in students %}
+          <tr>
+            <td><span class="badge badge-uom-primary">{{ s.matricule }}</span></td>
+            <td>{{ s.get_full_name|default:s.username }}</td>
+            <td>{{ s.email|default:'—' }}</td>
+            <td>{% if s.is_active %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-secondary">Non</span>{% endif %}</td>
+            <td class="text-end">
+              <a href="{% url 'admin_student_detail' s.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
+              <a href="{% url 'admin_student_toggle_active' s.id %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-power"></i></a>
+              <a href="{% url 'admin_student_reset_password' s.id %}" class="btn btn-outline-warning btn-sm"><i class="bi bi-key"></i></a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    <nav aria-label="Pagination" class="mt-3">
+      <ul class="pagination justify-content-center">
+        {% if students.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ students.previous_page_number }}&order={{ order }}&search={{ search_query }}">Précédent</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+        {% endif %}
+
+        <li class="page-item disabled"><span class="page-link">Page {{ students.number }} / {{ students.paginator.num_pages }}</span></li>
+
+        {% if students.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ students.next_page_number }}&order={{ order }}&search={{ search_query }}">Suivant</a></li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% else %}
+      <p class="text-center text-uom-gray mb-0">Aucun étudiant trouvé.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
