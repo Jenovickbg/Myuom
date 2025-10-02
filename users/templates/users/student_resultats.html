@@ -2,12 +2,7 @@
 
 {% block title %}Mes Résultats - MyUOM{% endblock %}
 
-{% block navbar_links %}
-<li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-speedometer2"></i> Accueil</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'student_cours' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
-<li class="nav-item"><a class="nav-link active" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
-{% endblock %}
+{# Les liens de navigation sont déjà définis dans le template de base #}
 
 {% block content %}
 <div class="row mb-4">

@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.http import JsonResponse
 import csv
 from .models import CustomUser, StudentProfile, TeacherProfile, Faculte, Promotion
 from .forms import (
@@ -85,6 +86,11 @@ def first_login_password_change(request):
             form.save()
             messages.success(request, "Mot de passe changé avec succès. Veuillez compléter votre profil.")
             return redirect('first_login_profile_completion')
+        else:
+            # Afficher les erreurs de validation
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = PasswordChangeFirstLoginForm(request.user)
     
@@ -101,7 +107,10 @@ def first_login_profile_completion(request):
         form = ProfileCompletionForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
-            request.user.complete_first_login()
+            # Marquer que la première connexion est terminée
+            request.user.is_first_login = False
+            request.user.is_active_student = True
+            request.user.save()
             messages.success(request, "Profil complété avec succès ! Bienvenue sur MyUOM.")
             
             if request.user.is_admin_user():
@@ -123,57 +132,105 @@ def student_dashboard(request):
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
     
-    # Import des modèles des autres apps
-    from cours.models import InscriptionCours
-    from travaux.models import Travail
-    from resultats.models import Note
+    # Import des modèles des autres apps avec gestion d'erreur
+    try:
+        from cours.models import InscriptionCours
+        cours_available = True
+    except:
+        cours_available = False
     
-    # Statistiques
-    mes_cours_count = InscriptionCours.objects.filter(
-        etudiant=request.user, 
-        is_actif=True
-    ).count()
+    try:
+        from travaux.models import Travail
+        travaux_available = True
+    except:
+        travaux_available = False
     
-    travaux_en_cours_count = Travail.objects.filter(
-        statut='publie',
-        is_visible_etudiants=True,
-        niveau=request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else 'L1'
-    ).count()
+    try:
+        from resultats.models import Note
+        notes_available = True
+    except:
+        notes_available = False
     
-    # Travaux urgents (à rendre dans les 7 prochains jours)
-    from django.utils import timezone
-    from datetime import timedelta
-    date_limite = timezone.now() + timedelta(days=7)
+    # Statistiques avec gestion d'erreur
+    if cours_available:
+        try:
+            mes_cours_count = InscriptionCours.objects.filter(
+                etudiant=request.user, 
+                is_actif=True
+            ).count()
+        except:
+            mes_cours_count = 0
+    else:
+        mes_cours_count = 0
     
-    travaux_urgents_count = Travail.objects.filter(
-        statut='publie',
-        is_visible_etudiants=True,
-        date_limite_remise__lte=date_limite,
-        niveau=request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else 'L1'
-    ).count()
+    if travaux_available:
+        try:
+            travaux_en_cours_count = Travail.objects.filter(
+                statut='publie',
+                is_visible_etudiants=True,
+                niveau=request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else 'L1'
+            ).count()
+        except:
+            travaux_en_cours_count = 0
+        
+        # Travaux urgents (à rendre dans les 7 prochains jours)
+        try:
+            from django.utils import timezone
+            from datetime import timedelta
+            date_limite = timezone.now() + timedelta(days=7)
+            
+            travaux_urgents_count = Travail.objects.filter(
+                statut='publie',
+                is_visible_etudiants=True,
+                date_limite_remise__lte=date_limite,
+                niveau=request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else 'L1'
+            ).count()
+        except:
+            travaux_urgents_count = 0
+    else:
+        travaux_en_cours_count = 0
+        travaux_urgents_count = 0
     
     # Moyenne générale (calcul simple)
-    notes = Note.objects.filter(
-        etudiant=request.user,
-        is_publie=True
-    )
-    if notes.exists():
-        moyenne_generale = round(sum(note.note_obtenue for note in notes) / notes.count(), 2)
+    if notes_available:
+        try:
+            notes = Note.objects.filter(
+                etudiant=request.user,
+                is_publie=True
+            )
+            if notes.exists():
+                moyenne_generale = round(sum(note.note_obtenue for note in notes) / notes.count(), 2)
+            else:
+                moyenne_generale = None
+        except:
+            moyenne_generale = None
     else:
         moyenne_generale = None
     
     # Mes cours récents
-    mes_cours = InscriptionCours.objects.filter(
-        etudiant=request.user,
-        is_actif=True
-    ).select_related('cours', 'cours__enseignant').order_by('-date_inscription')[:5]
+    if cours_available:
+        try:
+            mes_cours = InscriptionCours.objects.filter(
+                etudiant=request.user,
+                is_actif=True
+            ).select_related('cours', 'cours__enseignant').order_by('-date_inscription')[:5]
+        except:
+            mes_cours = []
+    else:
+        mes_cours = []
     
     # Travaux à rendre
-    travaux_a_rendre = Travail.objects.filter(
-        statut='publie',
-        is_visible_etudiants=True,
-        niveau=request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else 'L1'
-    ).select_related('enseignant').order_by('date_limite_remise')[:5]
+    if travaux_available:
+        try:
+            travaux_a_rendre = Travail.objects.filter(
+                statut='publie',
+                is_visible_etudiants=True,
+                niveau=request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else 'L1'
+            ).select_related('enseignant').order_by('date_limite_remise')[:5]
+        except:
+            travaux_a_rendre = []
+    else:
+        travaux_a_rendre = []
     
     # Notifications (pour l'instant vide, on l'implémentera plus tard)
     notifications = []
@@ -510,31 +567,99 @@ def admin_teacher_detail(request, user_id):
 
 @login_required
 def student_cours(request):
-    """Liste des cours de l'étudiant (inscriptions) et supports récents"""
-    if not request.user.is_student():
+    """Redirection vers la liste des cours"""
+    if not request.user.is_student_user():
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
+    
+    return redirect('cours:student_cours_list')
 
-    from cours.models import InscriptionCours, SupportCours
 
-    inscriptions = (
-        InscriptionCours.objects
-        .filter(etudiant=request.user, is_actif=True)
-        .select_related('cours', 'cours__enseignant')
-        .order_by('cours__code')
-    )
-
-    supports_recents = (
-        SupportCours.objects
-        .filter(is_public=True, cours__inscriptions__etudiant=request.user)
-        .select_related('cours', 'enseignant')
-        .order_by('-date_publication')[:10]
-    )
-
-    return render(request, 'users/student_cours.html', {
-        'inscriptions': inscriptions,
-        'supports_recents': supports_recents,
-    })
+@login_required
+def student_cours_detail(request, cours_id):
+    """Détails d'un cours pour l'étudiant avec les TP associés"""
+    if not request.user.is_student_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    # Vérifier que l'étudiant est inscrit au cours
+    try:
+        from cours.models import InscriptionCours, Cours
+        inscription = InscriptionCours.objects.get(
+            etudiant=request.user,
+            cours_id=cours_id,
+            is_actif=True
+        )
+        cours = inscription.cours
+    except InscriptionCours.DoesNotExist:
+        messages.error(request, "Vous n'êtes pas inscrit à ce cours.")
+        return redirect('cours:student_cours_list')
+    
+    # Récupérer les TP associés au cours
+    travaux_ouverts = []
+    travaux_fermes = []
+    travaux_termines = []
+    
+    try:
+        from travaux.models import Travail, RemiseTravail
+        from django.utils import timezone
+        
+        # Récupérer tous les travaux du cours
+        travaux = Travail.objects.filter(
+            cours=cours,
+            is_visible_etudiants=True,
+            statut__in=['publie', 'ferme']
+        ).order_by('-date_creation')
+        
+        # Récupérer les remises de l'étudiant pour ce cours
+        remises = RemiseTravail.objects.filter(
+            etudiant=request.user,
+            travail__cours=cours
+        ).select_related('travail')
+        
+        # Créer un dictionnaire des remises par travail
+        remises_dict = {remise.travail.id: remise for remise in remises}
+        
+        # Classer les travaux
+        for travail in travaux:
+            remise = remises_dict.get(travail.id)
+            
+            if remise:
+                if remise.statut in ['remis', 'en_cours_correction']:
+                    travaux_ouverts.append((travail, remise))
+                elif remise.statut in ['corrige', 'note_finalisee']:
+                    travaux_termines.append((travail, remise))
+            else:
+                # Pas de remise encore
+                if travail.is_remise_ouverte():
+                    travaux_ouverts.append((travail, None))
+                else:
+                    travaux_fermes.append((travail, None))
+                    
+    except Exception as e:
+        messages.info(request, "La section des travaux n'est pas encore disponible.")
+    
+    # Récupérer les supports de cours
+    supports_cours = []
+    try:
+        from cours.models import SupportCours
+        supports_cours = SupportCours.objects.filter(
+            cours=cours,
+            is_public=True
+        ).order_by('ordre_affichage', '-date_publication')
+    except Exception:
+        pass
+    
+    context = {
+        'cours': cours,
+        'inscription': inscription,
+        'travaux_ouverts': travaux_ouverts,
+        'travaux_fermes': travaux_fermes,
+        'travaux_termines': travaux_termines,
+        'supports_cours': supports_cours,
+    }
+    
+    return render(request, 'users/student_cours_detail.html', context)
 
 
 @login_required
@@ -544,27 +669,32 @@ def student_travaux(request):
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
 
-    from travaux.models import Travail, RemiseTravail
-    from django.utils import timezone
+    try:
+        from travaux.models import Travail, RemiseTravail
+        from django.utils import timezone
 
-    profil_niveau = getattr(getattr(request.user, 'student_profile', None), 'niveau', None)
+        profil_niveau = getattr(getattr(request.user, 'student_profile', None), 'niveau', None)
 
-    travaux = (
-        Travail.objects
-        .filter(is_visible_etudiants=True, statut__in=['publie', 'ferme'])
-        .filter(niveau=profil_niveau) if profil_niveau else Travail.objects.none()
-    )
+        travaux = (
+            Travail.objects
+            .filter(is_visible_etudiants=True, statut__in=['publie', 'ferme'])
+            .filter(niveau=profil_niveau) if profil_niveau else Travail.objects.none()
+        )
 
-    remises = (
-        RemiseTravail.objects
-        .filter(etudiant=request.user)
-        .select_related('travail')
-        .order_by('-date_remise')
-    )
+        remises = (
+            RemiseTravail.objects
+            .filter(etudiant=request.user)
+            .select_related('travail')
+            .order_by('-date_remise')
+        )
 
-    # Séparer en ouverts/fermés
-    travaux_ouverts = [t for t in travaux if t.is_remise_ouverte()]
-    travaux_fermes = [t for t in travaux if not t.is_remise_ouverte()]
+        # Séparer en ouverts/fermés
+        travaux_ouverts = [t for t in travaux if t.is_remise_ouverte()]
+        travaux_fermes = [t for t in travaux if not t.is_remise_ouverte()]
+    except:
+        travaux_ouverts = []
+        travaux_fermes = []
+        remises = []
 
     return render(request, 'users/student_travaux.html', {
         'travaux_ouverts': travaux_ouverts,
@@ -581,19 +711,22 @@ def student_resultats(request):
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
 
-    from resultats.models import Note, UE
+    try:
+        from resultats.models import Note, UE
 
-    notes = (
-        Note.objects
-        .filter(etudiant=request.user, is_publie=True)
-        .select_related('ue', 'enseignant')
-        .order_by('ue__code', '-date_publication')
-    )
+        notes = (
+            Note.objects
+            .filter(etudiant=request.user, is_publie=True)
+            .select_related('ue', 'enseignant')
+            .order_by('ue__code', '-date_publication')
+        )
 
-    # Agrégation simple par UE
-    ue_to_notes = {}
-    for n in notes:
-        ue_to_notes.setdefault(n.ue, []).append(n)
+        # Agrégation simple par UE
+        ue_to_notes = {}
+        for n in notes:
+            ue_to_notes.setdefault(n.ue, []).append(n)
+    except:
+        ue_to_notes = {}
 
     return render(request, 'users/student_resultats.html', {
         'ue_to_notes': ue_to_notes,
@@ -650,4 +783,359 @@ def admin_promotion_list(request):
     
     promotions = Promotion.objects.all().order_by('-annee_debut')
     return render(request, 'users/admin_promotion_list.html', {'promotions': promotions})
+
+
+@login_required
+def admin_student_data(request, user_id):
+    """Récupérer les données d'un étudiant en JSON pour les modales"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    try:
+        student = CustomUser.objects.get(id=user_id, user_type='etudiant')
+        profile = student.student_profile
+        
+        data = {
+            # Informations de base
+            'username': student.username,
+            'first_name': student.first_name,
+            'last_name': student.last_name,
+            'email': student.email,
+            'birth_date': student.birth_date.strftime('%d/%m/%Y') if student.birth_date else '',
+            'birth_place': student.birth_place or '',
+            'phone': student.phone or '',
+            'is_active': student.is_active,
+            'created_at': student.created_at.strftime('%d/%m/%Y à %H:%M') if student.created_at else '',
+            'last_login': student.last_login.strftime('%d/%m/%Y à %H:%M') if student.last_login else '',
+            
+            # Informations académiques
+            'niveau': profile.niveau if profile else '',
+            'filiere': profile.filiere if profile else '',
+            'faculte': profile.faculte.code if profile and profile.faculte else '',
+            'faculte_name': profile.faculte.nom if profile and profile.faculte else '',
+            'promotion': profile.promotion.nom_complet if profile and profile.promotion else '',
+            
+            # Contact d'urgence
+            'emergency_contact': profile.emergency_contact if profile else '',
+            'emergency_phone': profile.emergency_phone if profile else '',
+            
+            # Photo
+            'photo': profile.photo.url if profile and profile.photo else '',
+        }
+        return JsonResponse(data)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'Étudiant non trouvé'}, status=404)
+
+
+@login_required
+def admin_student_edit(request, user_id):
+    """Modifier un étudiant via modal"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    student = get_object_or_404(CustomUser, id=user_id, user_type='etudiant')
+    
+    if request.method == 'POST':
+        # Mettre à jour les informations de base
+        student.username = request.POST.get('username', student.username)
+        student.first_name = request.POST.get('first_name', student.first_name)
+        student.last_name = request.POST.get('last_name', student.last_name)
+        student.email = request.POST.get('email', student.email)
+        student.save()
+        
+        # Mettre à jour le profil étudiant
+        if hasattr(student, 'student_profile'):
+            profile = student.student_profile
+            profile.niveau = request.POST.get('niveau', profile.niveau)
+            profile.filiere = request.POST.get('filiere', profile.filiere)
+            
+            # Mettre à jour la faculté
+            faculte_code = request.POST.get('faculte')
+            if faculte_code:
+                try:
+                    faculte = Faculte.objects.get(code=faculte_code)
+                    profile.faculte = faculte
+                except Faculte.DoesNotExist:
+                    pass
+            
+            # Mettre à jour la promotion
+            promotion_str = request.POST.get('promotion')
+            if promotion_str:
+                try:
+                    annee_debut, annee_fin = promotion_str.split('-')
+                    promotion = Promotion.objects.get(annee_debut=int(annee_debut), annee_fin=int(annee_fin))
+                    profile.promotion = promotion
+                except (ValueError, Promotion.DoesNotExist):
+                    pass
+            
+            profile.save()
+        
+        messages.success(request, f"Étudiant {student.matricule} modifié avec succès.")
+        return redirect('admin_student_list')
+    
+    return redirect('admin_student_list')
+
+
+@login_required
+def admin_student_delete(request, user_id):
+    """Supprimer un étudiant via modal"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    student = get_object_or_404(CustomUser, id=user_id, user_type='etudiant')
+    
+    if request.method == 'POST':
+        matricule = student.matricule
+        student.delete()
+        messages.success(request, f"Étudiant {matricule} supprimé avec succès.")
+        return redirect('admin_student_list')
+    
+    return redirect('admin_student_list')
+
+
+# ======================== GESTION DES ENSEIGNANTS ========================
+
+@login_required
+def admin_teacher_list(request):
+    """Liste des enseignants avec filtrage par faculté"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    search_query = request.GET.get('search', '')
+    faculte_filter = request.GET.get('faculte', '')
+    
+    teachers = CustomUser.objects.filter(user_type='enseignant').select_related('teacher_profile')
+    
+    # Filtrage par recherche
+    if search_query:
+        teachers = teachers.filter(
+            Q(matricule__icontains=search_query) |
+            Q(first_name__icontains=search_query) |
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query)
+        )
+    
+    # Filtrage par faculté
+    if faculte_filter:
+        teachers = teachers.filter(teacher_profile__faculte__code=faculte_filter)
+    
+    # Tri
+    order = request.GET.get('order', 'created')
+    if order == 'name':
+        teachers = teachers.order_by('last_name', 'first_name')
+    elif order == 'matricule':
+        teachers = teachers.order_by('matricule')
+    elif order == 'faculte':
+        teachers = teachers.order_by('teacher_profile__faculte__nom', 'last_name')
+    else:
+        teachers = teachers.order_by('-created_at')
+
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(teachers, 10)
+    try:
+        teachers_page = paginator.page(page)
+    except PageNotAnInteger:
+        teachers_page = paginator.page(1)
+    except EmptyPage:
+        teachers_page = paginator.page(paginator.num_pages)
+
+    # Options pour les filtres
+    faculte_choices = [('', 'Toutes les facultés')] + [(f.code, f.nom) for f in Faculte.objects.filter(is_active=True).order_by('nom')]
+    
+    return render(request, 'users/admin_teacher_list.html', {
+        'teachers': teachers_page,
+        'search_query': search_query,
+        'faculte_filter': faculte_filter,
+        'faculte_choices': faculte_choices,
+        'order': order,
+        'paginator': paginator,
+    })
+
+
+@login_required
+def admin_teacher_create(request):
+    """Création d'un enseignant"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = TeacherCreationForm(request.POST)
+        if form.is_valid():
+            try:
+                teacher = form.save()
+                messages.success(request, f"Enseignant {teacher.matricule} créé avec succès.")
+                return redirect('admin_teacher_list')
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la création : {str(e)}")
+        else:
+            # Afficher les erreurs de validation
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = TeacherCreationForm()
+    
+    return render(request, 'users/admin_teacher_create.html', {'form': form})
+
+
+@login_required
+def admin_teacher_data(request, user_id):
+    """Récupérer les données d'un enseignant en JSON pour les modales"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    try:
+        teacher = CustomUser.objects.get(id=user_id, user_type='enseignant')
+        profile = teacher.teacher_profile
+        
+        data = {
+            # Informations de base
+            'username': teacher.username,
+            'first_name': teacher.first_name,
+            'last_name': teacher.last_name,
+            'email': teacher.email,
+            'birth_date': teacher.birth_date.strftime('%d/%m/%Y') if teacher.birth_date else '',
+            'birth_place': teacher.birth_place or '',
+            'phone': teacher.phone or '',
+            'is_active': teacher.is_active,
+            'created_at': teacher.created_at.strftime('%d/%m/%Y à %H:%M') if teacher.created_at else '',
+            'last_login': teacher.last_login.strftime('%d/%m/%Y à %H:%M') if teacher.last_login else '',
+            
+            # Informations professionnelles
+            'department': profile.department if profile else '',
+            'speciality': profile.speciality if profile else '',
+            'office': profile.office if profile else '',
+            'faculte': profile.faculte.code if profile and profile.faculte else '',
+            'faculte_name': profile.faculte.nom if profile and profile.faculte else '',
+        }
+        return JsonResponse(data)
+    except CustomUser.DoesNotExist:
+        return JsonResponse({'error': 'Enseignant non trouvé'}, status=404)
+
+
+@login_required
+def admin_teacher_edit(request, user_id):
+    """Modifier un enseignant via modal"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    teacher = get_object_or_404(CustomUser, id=user_id, user_type='enseignant')
+    
+    if request.method == 'POST':
+        # Mettre à jour les informations de base
+        teacher.username = request.POST.get('username', teacher.username)
+        teacher.first_name = request.POST.get('first_name', teacher.first_name)
+        teacher.last_name = request.POST.get('last_name', teacher.last_name)
+        teacher.email = request.POST.get('email', teacher.email)
+        teacher.save()
+        
+        # Mettre à jour le profil enseignant
+        if hasattr(teacher, 'teacher_profile'):
+            profile = teacher.teacher_profile
+            profile.department = request.POST.get('department', profile.department)
+            profile.speciality = request.POST.get('speciality', profile.speciality)
+            profile.office = request.POST.get('office', profile.office)
+            
+            # Mettre à jour la faculté
+            faculte_code = request.POST.get('faculte')
+            if faculte_code:
+                try:
+                    faculte = Faculte.objects.get(code=faculte_code)
+                    profile.faculte = faculte
+                except Faculte.DoesNotExist:
+                    pass
+            
+            profile.save()
+        
+        messages.success(request, f"Enseignant {teacher.matricule} modifié avec succès.")
+        return redirect('admin_teacher_list')
+    
+    return redirect('admin_teacher_list')
+
+
+@login_required
+def admin_teacher_delete(request, user_id):
+    """Supprimer un enseignant via modal"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    teacher = get_object_or_404(CustomUser, id=user_id, user_type='enseignant')
+    
+    if request.method == 'POST':
+        matricule = teacher.matricule
+        teacher.delete()
+        messages.success(request, f"Enseignant {matricule} supprimé avec succès.")
+        return redirect('admin_teacher_list')
+    
+    return redirect('admin_teacher_list')
+
+
+@login_required
+def admin_teacher_toggle_active(request, user_id):
+    """Activer/Désactiver un compte enseignant"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    teacher = get_object_or_404(CustomUser, id=user_id, user_type='enseignant')
+    teacher.is_active = not teacher.is_active
+    teacher.save()
+    
+    status = "activé" if teacher.is_active else "désactivé"
+    messages.success(request, f"Enseignant {teacher.matricule} {status} avec succès.")
+    return redirect('admin_teacher_list')
+
+
+@login_required
+def admin_teacher_reset_password(request, user_id):
+    """Réinitialiser le mot de passe d'un enseignant"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+
+    teacher = get_object_or_404(CustomUser, id=user_id, user_type='enseignant')
+    default_password = "12345678"
+    teacher.set_password(default_password)
+    teacher.is_first_login = True
+    teacher.save()
+
+    messages.success(request, f"Mot de passe de {teacher.matricule} réinitialisé à {default_password}.")
+    return redirect('admin_teacher_list')
+
+
+# ======================== GESTION DES FACULTÉS ET PROMOTIONS ========================
+
+@login_required
+def admin_faculte_list(request):
+    """Liste des facultés"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    facultes = Faculte.objects.all().order_by('nom')
+    
+    return render(request, 'users/admin_faculte_list.html', {
+        'facultes': facultes,
+    })
+
+
+@login_required
+def admin_promotion_list(request):
+    """Liste des promotions"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    promotions = Promotion.objects.all().order_by('-annee_debut')
+    
+    return render(request, 'users/admin_promotion_list.html', {
+        'promotions': promotions,
+    })
 

@@ -1,6 +1,7 @@
 {% extends 'users/base.html' %}
+{% load static %}
 
-{% block title %}Créer Étudiant - Administration{% endblock %}
+{% block title %}Créer Enseignant - Administration{% endblock %}
 
 {# Les liens de navigation sont déjà définis dans le template de base #}
 
@@ -9,7 +10,7 @@
   <div class="col-lg-8">
     <div class="card card-uom">
       <div class="card-header card-header-uom">
-        <h5 class="mb-0"><i class="bi bi-person-plus"></i> Créer un étudiant</h5>
+        <h5 class="mb-0"><i class="bi bi-person-plus"></i> Créer un enseignant</h5>
       </div>
       <div class="card-body">
         <form method="post">
@@ -40,27 +41,27 @@
           </div>
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label">Niveau</label>
-              {{ form.niveau }}
+              <label class="form-label">Département</label>
+              {{ form.department }}
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Filière</label>
-              {{ form.filiere }}
+              <label class="form-label">Spécialité</label>
+              {{ form.speciality }}
             </div>
           </div>
           <div class="row">
             <div class="col-md-6 mb-3">
-              <label class="form-label">Faculté</label>
-              {{ form.faculte }}
+              <label class="form-label">Bureau</label>
+              {{ form.office }}
             </div>
             <div class="col-md-6 mb-3">
-              <label class="form-label">Promotion</label>
-              {{ form.promotion }}
+              <label class="form-label">Faculté</label>
+              {{ form.faculte }}
             </div>
           </div>
           <div class="alert alert-info">
             <i class="bi bi-info-circle"></i>
-            <strong>Mot de passe automatique :</strong> L'étudiant recevra le mot de passe par défaut <code>12345678</code> et devra le changer lors de sa première connexion.
+            <strong>Mot de passe automatique :</strong> L'enseignant recevra le mot de passe par défaut <code>12345678</code> et devra le changer lors de sa première connexion.
           </div>
           {% if form.non_field_errors %}
           <div class="alert alert-danger">{{ form.non_field_errors }}</div>

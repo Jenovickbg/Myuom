@@ -42,6 +42,25 @@ class Cours(models.Model):
         limit_choices_to={'user_type': 'enseignant'}
     )
     
+    # Faculté et promotion
+    faculte = models.ForeignKey(
+        'users.Faculte',
+        on_delete=models.CASCADE,
+        related_name='cours_faculte',
+        help_text="Faculté du cours",
+        null=True,
+        blank=True
+    )
+    
+    promotion = models.ForeignKey(
+        'users.Promotion',
+        on_delete=models.CASCADE,
+        related_name='cours_promotion',
+        help_text="Promotion concernée",
+        null=True,
+        blank=True
+    )
+    
     # Dates
     date_creation = models.DateTimeField(auto_now_add=True)
     date_debut = models.DateField(help_text="Date de début du cours")

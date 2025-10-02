@@ -143,6 +143,14 @@ class CustomUser(AbstractUser):
         """Vérifie si l'utilisateur est un administrateur"""
         return self.user_type == 'admin'
     
+    def is_student_user(self):
+        """Vérifie si l'utilisateur est un étudiant (alias pour compatibilité)"""
+        return self.user_type == 'etudiant'
+    
+    def is_teacher_user(self):
+        """Vérifie si l'utilisateur est un enseignant (alias pour compatibilité)"""
+        return self.user_type == 'enseignant'
+    
     def needs_password_change(self):
         """Vérifie si l'utilisateur doit changer son mot de passe"""
         return self.is_first_login
@@ -295,6 +303,15 @@ class TeacherProfile(models.Model):
         max_length=50,
         blank=True,
         help_text="Bureau"
+    )
+    
+    # Faculté d'appartenance
+    faculte = models.ForeignKey(
+        Faculte,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Faculté d'appartenance"
     )
     
     created_at = models.DateTimeField(auto_now_add=True)

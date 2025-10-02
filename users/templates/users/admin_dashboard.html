@@ -2,23 +2,7 @@
 
 {% block title %}Tableau de bord Administrateur - MyUOM{% endblock %}
 
-{% block navbar_links %}
-<li class="nav-item">
-    <a class="nav-link" href="{% url 'admin_dashboard' %}">
-        <i class="bi bi-speedometer2"></i> Tableau de bord
-    </a>
-</li>
-<li class="nav-item">
-    <a class="nav-link" href="{% url 'admin_student_list' %}">
-        <i class="bi bi-people"></i> Étudiants
-    </a>
-</li>
-<li class="nav-item">
-    <a class="nav-link" href="{% url 'admin_teacher_list' %}">
-        <i class="bi bi-person-workspace"></i> Enseignants
-    </a>
-</li>
-{% endblock %}
+{# Les liens de navigation sont déjà définis dans le template de base #}
 
 {% block content %}
 <div class="row mb-4">

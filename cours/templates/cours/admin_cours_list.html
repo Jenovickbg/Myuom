@@ -1,0 +1,408 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Cours - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">Gestion des Cours</h2>
+    <div>
+      <a href="{% url 'cours:admin_cours_create' %}" class="btn btn-uom-primary"><i class="bi bi-plus-circle"></i> Créer</a>
+    </div>
+  </div>
+
+  <form method="get" class="mb-3">
+    <div class="row g-3">
+      <div class="col-md-4">
+        <input type="text" name="search" class="form-control" placeholder="Rechercher (titre, code, enseignant)" value="{{ search_query }}">
+      </div>
+      <div class="col-md-3">
+        <select name="faculte" class="form-select">
+          {% for value, label in faculte_choices %}
+          <option value="{{ value }}" {% if faculte_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-3">
+        <select name="promotion" class="form-select">
+          {% for value, label in promotion_choices %}
+          <option value="{{ value }}" {% if promotion_filter == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <button class="btn btn-uom-primary w-100" type="submit"><i class="bi bi-search"></i> Filtrer</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="card card-uom">
+    <div class="card-body">
+      {% if cours %}
+      <div class="table-responsive">
+        <table class="table align-middle">
+          <thead>
+            <tr>
+              <th><a href="?order=code{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Code</a></th>
+              <th><a href="?order=titre{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Titre</a></th>
+              <th><a href="?order=enseignant{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Enseignant</a></th>
+              <th><a href="?order=faculte{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Faculté</a></th>
+              <th><a href="?order=promotion{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Promotion</a></th>
+              <th>Type</th>
+              <th>Actif</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in cours %}
+            <tr>
+              <td><span class="badge badge-uom-primary">{{ c.code }}</span></td>
+              <td>{{ c.titre }}</td>
+              <td>{{ c.enseignant.get_full_name|default:c.enseignant.username }}</td>
+              <td>
+                {% if c.faculte %}
+                  <span class="badge bg-info">{{ c.faculte.nom }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if c.promotion %}
+                  <span class="badge bg-secondary">{{ c.promotion.nom_complet }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <span class="badge bg-primary">{{ c.get_type_cours_display }}</span>
+              </td>
+              <td>{% if c.is_actif %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-secondary">Non</span>{% endif %}</td>
+              <td class="text-end">
+                <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#viewCoursModal" data-cours-id="{{ c.id }}" data-cours-code="{{ c.code }}" data-cours-titre="{{ c.titre }}" title="Voir détails"><i class="bi bi-eye"></i></button>
+                <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#editCoursModal" data-cours-id="{{ c.id }}" data-cours-code="{{ c.code }}" data-cours-titre="{{ c.titre }}" title="Modifier"><i class="bi bi-pencil"></i></button>
+                <a href="{% url 'cours:admin_cours_toggle_active' c.id %}" class="btn btn-outline-secondary btn-sm" title="Activer/Désactiver"><i class="bi bi-power"></i></a>
+                <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteCoursModal" data-cours-id="{{ c.id }}" data-cours-code="{{ c.code }}" data-cours-titre="{{ c.titre }}" title="Supprimer"><i class="bi bi-trash"></i></button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      
+      <!-- Pagination -->
+      <nav aria-label="Pagination" class="mt-3">
+        <ul class="pagination justify-content-center">
+          {% if cours.has_previous %}
+          <li class="page-item"><a class="page-link" href="?page={{ cours.previous_page_number }}&order={{ order }}&search={{ search_query }}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}">Précédent</a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+          {% endif %}
+
+          <li class="page-item disabled"><span class="page-link">Page {{ cours.number }} / {{ cours.paginator.num_pages }}</span></li>
+
+          {% if cours.has_next %}
+          <li class="page-item"><a class="page-link" href="?page={{ cours.next_page_number }}&order={{ order }}&search={{ search_query }}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}">Suivant</a></li>
+          {% else %}
+          <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% else %}
+        <p class="text-center text-uom-gray mb-0">Aucun cours trouvé.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal de visualisation des détails du cours -->
+<div class="modal fade" id="viewCoursModal" tabindex="-1" aria-labelledby="viewCoursModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewCoursModalLabel">Détails du cours</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Code</label>
+            <p id="cours_code" class="mb-0"></p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Type</label>
+            <p id="cours_type" class="mb-0"></p>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Titre</label>
+          <p id="cours_titre" class="mb-0"></p>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Description</label>
+          <p id="cours_description" class="mb-0"></p>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Niveau</label>
+            <p id="cours_niveau" class="mb-0"></p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Filière</label>
+            <p id="cours_filiere" class="mb-0"></p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Enseignant</label>
+            <p id="cours_enseignant" class="mb-0"></p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Faculté</label>
+            <p id="cours_faculte" class="mb-0"></p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Promotion</label>
+            <p id="cours_promotion" class="mb-0"></p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Statut</label>
+            <p id="cours_statut" class="mb-0"></p>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Date de début</label>
+            <p id="cours_date_debut" class="mb-0"></p>
+          </div>
+          <div class="col-md-6 mb-3">
+            <label class="form-label fw-bold">Date de fin</label>
+            <p id="cours_date_fin" class="mb-0"></p>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label fw-bold">Date de création</label>
+          <p id="cours_date_creation" class="mb-0"></p>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-uom-primary" onclick="editCoursFromView()">Modifier</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de modification du cours -->
+<div class="modal fade" id="editCoursModal" tabindex="-1" aria-labelledby="editCoursModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editCoursModalLabel">Modifier le cours</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editCoursForm" method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Code</label>
+              <input type="text" class="form-control" name="code" id="edit_code" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Type</label>
+              <select class="form-control" name="type_cours" id="edit_type_cours">
+                <option value="cours">Cours Magistral</option>
+                <option value="tp">Travaux Pratiques</option>
+                <option value="td">Travaux Dirigés</option>
+                <option value="projet">Projet</option>
+              </select>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Titre</label>
+            <input type="text" class="form-control" name="titre" id="edit_titre">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" name="description" id="edit_description" rows="3"></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Niveau</label>
+              <select class="form-control" name="niveau" id="edit_niveau">
+                <option value="L1">Licence 1</option>
+                <option value="L2">Licence 2</option>
+                <option value="L3">Licence 3</option>
+                <option value="M1">Master 1</option>
+                <option value="M2">Master 2</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Filière</label>
+              <input type="text" class="form-control" name="filiere" id="edit_filiere">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Enseignant</label>
+              <select class="form-control" name="enseignant" id="edit_enseignant">
+                {% for enseignant in enseignants %}
+                  <option value="{{ enseignant.id }}">{{ enseignant.get_full_name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Faculté</label>
+              <select class="form-control" name="faculte" id="edit_faculte">
+                {% for f in faculte_choices %}
+                  {% if f.0 %}
+                    <option value="{{ f.0 }}">{{ f.1 }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Promotion</label>
+              <select class="form-control" name="promotion" id="edit_promotion">
+                {% for p in promotion_choices %}
+                  {% if p.0 %}
+                    <option value="{{ p.0 }}">{{ p.1 }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Date de début</label>
+              <input type="date" class="form-control" name="date_debut" id="edit_date_debut">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Date de fin</label>
+            <input type="date" class="form-control" name="date_fin" id="edit_date_fin">
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-uom-primary">Sauvegarder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de suppression du cours -->
+<div class="modal fade" id="deleteCoursModal" tabindex="-1" aria-labelledby="deleteCoursModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteCoursModalLabel">Supprimer le cours</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir supprimer le cours <strong id="delete_cours_titre"></strong> ?</p>
+        <p class="text-danger"><strong>Cette action est irréversible !</strong></p>
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+          <strong>Attention :</strong> Toutes les données associées à ce cours seront également supprimées.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form id="deleteCoursForm" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Gestion de la modal de visualisation
+document.getElementById('viewCoursModal').addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var coursId = button.getAttribute('data-cours-id');
+  var coursCode = button.getAttribute('data-cours-code');
+  var coursTitre = button.getAttribute('data-cours-titre');
+  
+  // Afficher les informations de base
+  document.getElementById('cours_code').textContent = coursCode;
+  document.getElementById('cours_titre').textContent = coursTitre;
+  
+  // Charger les données complètes du cours via AJAX
+  fetch('/cours/admin/cours/' + coursId + '/data/')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('cours_type').textContent = data.type_cours || '—';
+      document.getElementById('cours_description').textContent = data.description || '—';
+      document.getElementById('cours_niveau').textContent = data.niveau || '—';
+      document.getElementById('cours_filiere').textContent = data.filiere || '—';
+      document.getElementById('cours_enseignant').textContent = data.enseignant_name || '—';
+      document.getElementById('cours_faculte').textContent = data.faculte_name || '—';
+      document.getElementById('cours_promotion').textContent = data.promotion || '—';
+      document.getElementById('cours_date_debut').textContent = data.date_debut || '—';
+      document.getElementById('cours_date_fin').textContent = data.date_fin || '—';
+      document.getElementById('cours_date_creation').textContent = data.date_creation || '—';
+      document.getElementById('cours_statut').innerHTML = data.is_actif ? '<span class="badge bg-success">Actif</span>' : '<span class="badge bg-secondary">Inactif</span>';
+    })
+    .catch(error => console.error('Erreur:', error));
+});
+
+// Gestion de la modal d'édition
+document.getElementById('editCoursModal').addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var coursId = button.getAttribute('data-cours-id');
+  var coursCode = button.getAttribute('data-cours-code');
+  var coursTitre = button.getAttribute('data-cours-titre');
+  
+  // Mettre à jour le formulaire
+  document.getElementById('editCoursForm').action = '/cours/admin/cours/' + coursId + '/edit/';
+  document.getElementById('edit_code').value = coursCode;
+  
+  // Charger les données du cours via AJAX
+  fetch('/cours/admin/cours/' + coursId + '/data/')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('edit_titre').value = data.titre || '';
+      document.getElementById('edit_description').value = data.description || '';
+      document.getElementById('edit_type_cours').value = data.type_cours || '';
+      document.getElementById('edit_niveau').value = data.niveau || '';
+      document.getElementById('edit_filiere').value = data.filiere || '';
+      document.getElementById('edit_enseignant').value = data.enseignant_id || '';
+      document.getElementById('edit_faculte').value = data.faculte || '';
+      document.getElementById('edit_promotion').value = data.promotion || '';
+      document.getElementById('edit_date_debut').value = data.date_debut || '';
+      document.getElementById('edit_date_fin').value = data.date_fin || '';
+    })
+    .catch(error => console.error('Erreur:', error));
+});
+
+// Gestion de la modal de suppression
+document.getElementById('deleteCoursModal').addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var coursId = button.getAttribute('data-cours-id');
+  var coursTitre = button.getAttribute('data-cours-titre');
+  
+  document.getElementById('deleteCoursForm').action = '/cours/admin/cours/' + coursId + '/delete/';
+  document.getElementById('delete_cours_titre').textContent = coursTitre;
+});
+
+// Fonction pour passer de la modal de visualisation à celle d'édition
+function editCoursFromView() {
+  // Fermer la modal de visualisation
+  var viewModal = bootstrap.Modal.getInstance(document.getElementById('viewCoursModal'));
+  viewModal.hide();
+  
+  // Ouvrir la modal d'édition
+  setTimeout(function() {
+    var editModal = new bootstrap.Modal(document.getElementById('editCoursModal'));
+    editModal.show();
+  }, 300);
+}
+</script>
+{% endblock %}

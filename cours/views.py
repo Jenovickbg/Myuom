@@ -2,51 +2,395 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
+from django.http import JsonResponse
+from .models import Cours, SupportCours, InscriptionCours
+from users.models import CustomUser, Faculte, Promotion
+from .forms import CoursCreationForm, SupportCoursForm
 
-from .models import Cours, SupportCours
-from .forms import SupportCoursForm
 
-
-@login_required
-def teacher_courses(request):
-    """Liste des cours de l'enseignant"""
-    if not hasattr(request.user, 'user_type') or not request.user.is_teacher():
-        messages.error(request, "Accès non autorisé.")
-        return redirect('login')
-
-    cours_list = Cours.objects.filter(enseignant=request.user).order_by('code')
-    supports_count = (
-        SupportCours.objects
-        .filter(enseignant=request.user)
-        .values('cours').distinct().count()
-    )
-
-    context = {
-        'cours_list': cours_list,
-        'supports_count': supports_count,
-    }
-    return render(request, 'cours/teacher_courses.html', context)
-
+# ======================== VUES ADMINISTRATEUR ========================
 
 @login_required
-def support_create(request):
-    """Publication d'un support de cours"""
-    if not hasattr(request.user, 'user_type') or not request.user.is_teacher():
+def admin_cours_list(request):
+    """Liste des cours avec filtrage par faculté et promotion"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
-
-    if request.method == 'POST':
-        form = SupportCoursForm(request.POST, request.FILES, teacher=request.user)
-        if form.is_valid():
-            support = form.save(commit=False)
-            support.enseignant = request.user
-            support.save()
-            messages.success(request, "Support publié avec succès.")
-            return redirect('cours:teacher_courses')
-        messages.error(request, "Veuillez corriger les erreurs.")
+    
+    search_query = request.GET.get('search', '')
+    faculte_filter = request.GET.get('faculte', '')
+    promotion_filter = request.GET.get('promotion', '')
+    
+    cours = Cours.objects.select_related('enseignant', 'faculte', 'promotion')
+    
+    # Filtrage par recherche
+    if search_query:
+        cours = cours.filter(
+            Q(titre__icontains=search_query) |
+            Q(code__icontains=search_query) |
+            Q(enseignant__first_name__icontains=search_query) |
+            Q(enseignant__last_name__icontains=search_query)
+        )
+    
+    # Filtrage par faculté
+    if faculte_filter:
+        cours = cours.filter(faculte__code=faculte_filter)
+    
+    # Filtrage par promotion
+    if promotion_filter:
+        try:
+            annee_debut, annee_fin = promotion_filter.split('-')
+            cours = cours.filter(
+                promotion__annee_debut=int(annee_debut),
+                promotion__annee_fin=int(annee_fin)
+            )
+        except (ValueError, AttributeError):
+            pass
+    
+    # Tri
+    order = request.GET.get('order', 'created')
+    if order == 'titre':
+        cours = cours.order_by('titre')
+    elif order == 'code':
+        cours = cours.order_by('code')
+    elif order == 'enseignant':
+        cours = cours.order_by('enseignant__last_name', 'enseignant__first_name')
+    elif order == 'faculte':
+        cours = cours.order_by('faculte__nom', 'titre')
+    elif order == 'promotion':
+        cours = cours.order_by('promotion__annee_debut', 'titre')
     else:
-        form = SupportCoursForm(teacher=request.user)
+        cours = cours.order_by('-date_creation')
 
-    return render(request, 'cours/support_create.html', {'form': form})
+    # Pagination
+    page = request.GET.get('page', 1)
+    paginator = Paginator(cours, 10)
+    try:
+        cours_page = paginator.page(page)
+    except PageNotAnInteger:
+        cours_page = paginator.page(1)
+    except EmptyPage:
+        cours_page = paginator.page(paginator.num_pages)
 
-# Create your views here.
+    # Options pour les filtres
+    faculte_choices = [('', 'Toutes les facultés')] + [(f.code, f.nom) for f in Faculte.objects.filter(is_active=True).order_by('nom')]
+    
+    # Récupérer les promotions existantes
+    existing_promotions = Cours.objects.filter(
+        promotion__isnull=False
+    ).values_list('promotion__annee_debut', 'promotion__annee_fin').distinct().order_by('promotion__annee_debut')
+
+    promotion_choices = [('', 'Toutes les promotions')] + [(f"{debut}-{fin}", f"{debut}-{fin}") for debut, fin in existing_promotions]
+    
+    return render(request, 'cours/admin_cours_list.html', {
+        'cours': cours_page,
+        'search_query': search_query,
+        'faculte_filter': faculte_filter,
+        'promotion_filter': promotion_filter,
+        'faculte_choices': faculte_choices,
+        'promotion_choices': promotion_choices,
+        'order': order,
+        'paginator': paginator,
+    })
+
+
+@login_required
+def admin_cours_create(request):
+    """Création d'un cours"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = CoursCreationForm(request.POST)
+        if form.is_valid():
+            try:
+                cours = form.save()
+                messages.success(request, f"Cours {cours.code} créé avec succès.")
+                return redirect('cours:admin_cours_list')
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la création : {str(e)}")
+        else:
+            # Afficher les erreurs de validation
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = CoursCreationForm()
+    
+    return render(request, 'cours/admin_cours_create.html', {'form': form})
+
+
+@login_required
+def admin_cours_data(request, cours_id):
+    """Récupérer les données d'un cours en JSON pour les modales"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    try:
+        cours = Cours.objects.get(id=cours_id)
+        
+        data = {
+            'titre': cours.titre,
+            'code': cours.code,
+            'description': cours.description or '',
+            'type_cours': cours.type_cours,
+            'niveau': cours.niveau,
+            'filiere': cours.filiere,
+            'enseignant_id': cours.enseignant.id,
+            'enseignant_name': cours.enseignant.get_full_name(),
+            'faculte': cours.faculte.code if cours.faculte else '',
+            'faculte_name': cours.faculte.nom if cours.faculte else '',
+            'promotion': cours.promotion.nom_complet if cours.promotion else '',
+            'date_debut': cours.date_debut.strftime('%Y-%m-%d') if cours.date_debut else '',
+            'date_fin': cours.date_fin.strftime('%Y-%m-%d') if cours.date_fin else '',
+            'is_actif': cours.is_actif,
+            'is_visible_etudiants': cours.is_visible_etudiants,
+            'date_creation': cours.date_creation.strftime('%d/%m/%Y à %H:%M') if cours.date_creation else '',
+        }
+        return JsonResponse(data)
+    except Cours.DoesNotExist:
+        return JsonResponse({'error': 'Cours non trouvé'}, status=404)
+
+
+@login_required
+def admin_cours_edit(request, cours_id):
+    """Modifier un cours via modal"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    cours = get_object_or_404(Cours, id=cours_id)
+    
+    if request.method == 'POST':
+        # Mettre à jour les informations de base
+        cours.titre = request.POST.get('titre', cours.titre)
+        cours.code = request.POST.get('code', cours.code)
+        cours.description = request.POST.get('description', cours.description)
+        cours.type_cours = request.POST.get('type_cours', cours.type_cours)
+        cours.niveau = request.POST.get('niveau', cours.niveau)
+        cours.filiere = request.POST.get('filiere', cours.filiere)
+        
+        # Mettre à jour l'enseignant
+        enseignant_id = request.POST.get('enseignant')
+        if enseignant_id:
+            try:
+                enseignant = CustomUser.objects.get(id=enseignant_id, user_type='enseignant')
+                cours.enseignant = enseignant
+            except CustomUser.DoesNotExist:
+                pass
+        
+        # Mettre à jour la faculté
+        faculte_code = request.POST.get('faculte')
+        if faculte_code:
+            try:
+                faculte = Faculte.objects.get(code=faculte_code)
+                cours.faculte = faculte
+            except Faculte.DoesNotExist:
+                pass
+        
+        # Mettre à jour la promotion
+        promotion_str = request.POST.get('promotion')
+        if promotion_str:
+            try:
+                annee_debut, annee_fin = promotion_str.split('-')
+                promotion = Promotion.objects.get(annee_debut=int(annee_debut), annee_fin=int(annee_fin))
+                cours.promotion = promotion
+            except (ValueError, Promotion.DoesNotExist):
+                pass
+        
+        # Mettre à jour les dates
+        date_debut = request.POST.get('date_debut')
+        if date_debut:
+            cours.date_debut = date_debut
+        
+        date_fin = request.POST.get('date_fin')
+        if date_fin:
+            cours.date_fin = date_fin
+        
+        cours.save()
+        
+        messages.success(request, f"Cours {cours.code} modifié avec succès.")
+        return redirect('cours:admin_cours_list')
+    
+    return redirect('admin_cours_list')
+
+
+@login_required
+def admin_cours_delete(request, cours_id):
+    """Supprimer un cours via modal"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    cours = get_object_or_404(Cours, id=cours_id)
+    
+    if request.method == 'POST':
+        code = cours.code
+        cours.delete()
+        messages.success(request, f"Cours {code} supprimé avec succès.")
+        return redirect('cours:admin_cours_list')
+    
+    return redirect('admin_cours_list')
+
+
+@login_required
+def admin_cours_toggle_active(request, cours_id):
+    """Activer/Désactiver un cours"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    cours = get_object_or_404(Cours, id=cours_id)
+    cours.is_actif = not cours.is_actif
+    cours.save()
+    
+    status = "activé" if cours.is_actif else "désactivé"
+    messages.success(request, f"Cours {cours.code} {status} avec succès.")
+    return redirect('admin_cours_list')
+
+
+# ======================== VUES ENSEIGNANT ========================
+
+@login_required
+def teacher_cours_list(request):
+    """Liste des cours d'un enseignant"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    cours = Cours.objects.filter(enseignant=request.user).order_by('-date_creation')
+    
+    return render(request, 'cours/teacher_cours_list.html', {
+        'cours': cours,
+    })
+
+
+@login_required
+def teacher_cours_create(request):
+    """Création d'un cours par un enseignant"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        form = CoursCreationForm(request.POST)
+        if form.is_valid():
+            cours = form.save(commit=False)
+            cours.enseignant = request.user
+            cours.save()
+            messages.success(request, f"Cours {cours.code} créé avec succès.")
+            return redirect('cours:teacher_cours_list')
+        else:
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
+    else:
+        form = CoursCreationForm()
+    
+    return render(request, 'cours/teacher_cours_create.html', {'form': form})
+
+
+# ======================== VUES ÉTUDIANT ========================
+
+@login_required
+def student_cours_list(request):
+    """Liste des cours auxquels l'étudiant est inscrit"""
+    if not request.user.is_student_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    # Récupérer les cours auxquels l'étudiant est inscrit
+    try:
+        inscriptions = InscriptionCours.objects.filter(
+            etudiant=request.user,
+            is_actif=True
+        ).select_related('cours', 'cours__enseignant', 'cours__faculte', 'cours__promotion')
+        
+        cours = [inscription.cours for inscription in inscriptions if inscription.cours.is_actif and inscription.cours.is_visible_etudiants]
+        
+        # Récupérer les informations du profil étudiant
+        try:
+            student_profile = request.user.student_profile
+            promotion = student_profile.promotion
+            faculte = student_profile.faculte
+        except:
+            promotion = None
+            faculte = None
+            
+    except Exception as e:
+        cours = []
+        promotion = None
+        faculte = None
+        messages.info(request, "Aucun cours trouvé.")
+    
+    return render(request, 'cours/student_cours_list.html', {
+        'cours': cours,
+        'promotion': promotion,
+        'faculte': faculte,
+    })
+
+
+@login_required
+def student_cours_detail(request, cours_id):
+    """Détails d'un cours pour un étudiant"""
+    if not request.user.is_student_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    cours = get_object_or_404(Cours, id=cours_id, is_actif=True, is_visible_etudiants=True)
+    
+    # Vérifier que l'étudiant peut accéder à ce cours
+    try:
+        student_profile = request.user.student_profile
+        if cours.promotion and cours.promotion != student_profile.promotion:
+            messages.error(request, "Vous n'avez pas accès à ce cours.")
+            return redirect('cours:student_cours_list')
+    except:
+        pass
+    
+    # Récupérer les supports de cours
+    supports = SupportCours.objects.filter(cours=cours, is_public=True).order_by('ordre_affichage', '-date_publication')
+    
+    # Vérifier si l'étudiant est inscrit
+    is_inscrit = InscriptionCours.objects.filter(etudiant=request.user, cours=cours, is_actif=True).exists()
+    
+    return render(request, 'cours/student_cours_detail.html', {
+        'cours': cours,
+        'supports': supports,
+        'is_inscrit': is_inscrit,
+    })
+
+
+@login_required
+def student_cours_inscription(request, cours_id):
+    """Inscription d'un étudiant à un cours"""
+    if not request.user.is_student_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    cours = get_object_or_404(Cours, id=cours_id, is_actif=True, is_visible_etudiants=True)
+    
+    # Vérifier que l'étudiant peut s'inscrire à ce cours
+    try:
+        student_profile = request.user.student_profile
+        if cours.promotion and cours.promotion != student_profile.promotion:
+            messages.error(request, "Vous n'avez pas accès à ce cours.")
+            return redirect('cours:student_cours_list')
+    except:
+        pass
+    
+    # Créer ou réactiver l'inscription
+    inscription, created = InscriptionCours.objects.get_or_create(
+        etudiant=request.user,
+        cours=cours,
+        defaults={'is_actif': True, 'is_valide': False}
+    )
+    
+    if not created:
+        inscription.is_actif = True
+        inscription.save()
+    
+    messages.success(request, f"Vous êtes maintenant inscrit au cours {cours.code}.")
+    return redirect('cours:student_cours_detail', cours_id=cours_id)

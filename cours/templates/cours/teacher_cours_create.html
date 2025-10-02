@@ -1,0 +1,152 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Créer un Cours - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4 text-center" style="color: var(--uom-blue);">Créer un Nouveau Cours</h2>
+
+    <div class="card card-uom mx-auto" style="max-width: 800px;">
+        <div class="card-header card-header-uom">
+            <h5 class="mb-0">Informations du cours</h5>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.titre.id_for_label }}" class="form-label">{{ form.titre.label }}</label>
+                        {{ form.titre }}
+                        {% if form.titre.help_text %}
+                            <div class="form-text">{{ form.titre.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.titre.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.code.id_for_label }}" class="form-label">{{ form.code.label }}</label>
+                        {{ form.code }}
+                        {% if form.code.help_text %}
+                            <div class="form-text">{{ form.code.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.code.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.help_text %}
+                        <div class="form-text">{{ form.description.help_text }}</div>
+                    {% endif %}
+                    {% for error in form.description.errors %}
+                        <div class="text-danger">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.type_cours.id_for_label }}" class="form-label">{{ form.type_cours.label }}</label>
+                        {{ form.type_cours }}
+                        {% if form.type_cours.help_text %}
+                            <div class="form-text">{{ form.type_cours.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.type_cours.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.niveau.id_for_label }}" class="form-label">{{ form.niveau.label }}</label>
+                        {{ form.niveau }}
+                        {% if form.niveau.help_text %}
+                            <div class="form-text">{{ form.niveau.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.niveau.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label for="{{ form.filiere.id_for_label }}" class="form-label">{{ form.filiere.label }}</label>
+                        {{ form.filiere }}
+                        {% if form.filiere.help_text %}
+                            <div class="form-text">{{ form.filiere.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.filiere.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.faculte.id_for_label }}" class="form-label">{{ form.faculte.label }}</label>
+                        {{ form.faculte }}
+                        {% if form.faculte.help_text %}
+                            <div class="form-text">{{ form.faculte.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.faculte.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.promotion.id_for_label }}" class="form-label">{{ form.promotion.label }}</label>
+                        {{ form.promotion }}
+                        {% if form.promotion.help_text %}
+                            <div class="form-text">{{ form.promotion.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.promotion.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.date_debut.id_for_label }}" class="form-label">{{ form.date_debut.label }}</label>
+                        {{ form.date_debut }}
+                        {% if form.date_debut.help_text %}
+                            <div class="form-text">{{ form.date_debut.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.date_debut.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label for="{{ form.date_fin.id_for_label }}" class="form-label">{{ form.date_fin.label }}</label>
+                        {{ form.date_fin }}
+                        {% if form.date_fin.help_text %}
+                            <div class="form-text">{{ form.date_fin.help_text }}</div>
+                        {% endif %}
+                        {% for error in form.date_fin.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+                {% endif %}
+                
+                {% for field in form %}
+                  {% if field.errors %}
+                    <div class="alert alert-danger">
+                      <strong>{{ field.label }}:</strong>
+                      {% for error in field.errors %}
+                        {{ error }}
+                      {% endfor %}
+                    </div>
+                  {% endif %}
+                {% endfor %}
+                
+                <div class="d-grid gap-2">
+                    <button type="submit" class="btn btn-uom-primary"><i class="bi bi-check-circle"></i> Créer le cours</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

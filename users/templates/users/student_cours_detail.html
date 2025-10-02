@@ -1,0 +1,249 @@
+{% extends 'users/base.html' %}
+
+{% block title %}{{ cours.titre }} - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- En-tête du cours -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="mb-1">{{ cours.titre }}</h2>
+                            <p class="mb-0 text-light">{{ cours.code }} - {{ cours.get_type_cours_display }}</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-success">{{ cours.niveau }}</span>
+                            <span class="badge bg-info">{{ cours.filiere }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5>Description du cours</h5>
+                            <p class="text-muted">{{ cours.description|default:"Aucune description disponible." }}</p>
+                            
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <strong>Enseignant :</strong> {{ cours.enseignant.get_full_name }}<br>
+                                    <strong>Début :</strong> {{ cours.date_debut|date:"d/m/Y" }}<br>
+                                    <strong>Fin :</strong> {{ cours.date_fin|date:"d/m/Y" }}
+                                </div>
+                                <div class="col-md-6">
+                                    {% if cours.faculte %}
+                                        <strong>Faculté :</strong> {{ cours.faculte.nom }}<br>
+                                    {% endif %}
+                                    {% if cours.promotion %}
+                                        <strong>Promotion :</strong> {{ cours.promotion.nom_complet }}<br>
+                                    {% endif %}
+                                    <strong>Statut :</strong> 
+                                    {% if cours.is_actif %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Inactif</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center">
+                                <a href="{% url 'cours:student_cours_list' %}" class="btn btn-uom-secondary">
+                                    <i class="bi bi-arrow-left"></i> Retour aux cours
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Travaux à faire -->
+        <div class="col-md-6 mb-4">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-file-earmark-text"></i> Travaux à faire
+                        <span class="badge bg-warning ms-2">{{ travaux_ouverts|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if travaux_ouverts %}
+                        {% for travail, remise in travaux_ouverts %}
+                        <div class="card mb-3 border-start border-warning border-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title text-warning">{{ travail.titre }}</h6>
+                                        <p class="card-text text-muted small">{{ travail.description|truncatewords:20 }}</p>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-calendar"></i> Limite : {{ travail.date_limite_remise|date:"d/m/Y à H:i" }}
+                                            {% if travail.date_limite_correction %}
+                                                <br><i class="bi bi-clock"></i> Correction : {{ travail.date_limite_correction|date:"d/m/Y à H:i" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        {% if remise %}
+                                            <span class="badge bg-info">{{ remise.get_statut_display }}</span>
+                                            {% if remise.note %}
+                                                <br><span class="badge bg-success">{{ remise.note }}/{{ travail.note_maximale }}</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="badge bg-warning">À faire</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="#" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Voir détails
+                                    </a>
+                                    {% if not remise and travail.is_remise_ouverte %}
+                                        <a href="#" class="btn btn-sm btn-uom-primary">
+                                            <i class="bi bi-upload"></i> Rendre
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-check-circle display-4"></i>
+                            <p class="mt-2">Aucun travail en attente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Travaux terminés -->
+        <div class="col-md-6 mb-4">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-check-circle"></i> Travaux terminés
+                        <span class="badge bg-success ms-2">{{ travaux_termines|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if travaux_termines %}
+                        {% for travail, remise in travaux_termines %}
+                        <div class="card mb-3 border-start border-success border-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title text-success">{{ travail.titre }}</h6>
+                                        <p class="card-text text-muted small">{{ travail.description|truncatewords:20 }}</p>
+                                        <div class="small text-muted">
+                                            <i class="bi bi-calendar-check"></i> Rendu le : {{ remise.date_remise|date:"d/m/Y à H:i" }}
+                                            {% if remise.date_correction %}
+                                                <br><i class="bi bi-check-circle"></i> Corrigé le : {{ remise.date_correction|date:"d/m/Y à H:i" }}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-success">{{ remise.get_statut_display }}</span>
+                                        {% if remise.note %}
+                                            <br><span class="badge bg-primary">{{ remise.note }}/{{ travail.note_maximale }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="#" class="btn btn-sm btn-outline-success">
+                                        <i class="bi bi-eye"></i> Voir correction
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox display-4"></i>
+                            <p class="mt-2">Aucun travail terminé</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Travaux fermés (non rendus) -->
+    {% if travaux_fermes %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-x-circle"></i> Travaux fermés
+                        <span class="badge bg-secondary ms-2">{{ travaux_fermes|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for travail, remise in travaux_fermes %}
+                    <div class="card mb-3 border-start border-secondary border-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="card-title text-muted">{{ travail.titre }}</h6>
+                                    <p class="card-text text-muted small">{{ travail.description|truncatewords:20 }}</p>
+                                    <div class="small text-muted">
+                                        <i class="bi bi-calendar-x"></i> Fermé le : {{ travail.date_limite_remise|date:"d/m/Y à H:i" }}
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-secondary">Fermé</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Supports de cours -->
+    {% if supports_cours %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-download"></i> Supports de cours
+                        <span class="badge bg-info ms-2">{{ supports_cours|length }}</span>
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for support in supports_cours %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card border">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ support.titre }}</h6>
+                                    <p class="card-text text-muted small">{{ support.description|truncatewords:15 }}</p>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="text-muted">
+                                            <i class="bi bi-file-earmark"></i> {{ support.get_type_support_display }}
+                                        </small>
+                                        <a href="{{ support.fichier.url }}" class="btn btn-sm btn-outline-primary" download>
+                                            <i class="bi bi-download"></i> Télécharger
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

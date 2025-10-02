@@ -2,12 +2,7 @@
 
 {% block title %}Tableau de bord Enseignant - MyUOM{% endblock %}
 
-{% block navbar_links %}
-<li class="nav-item"><a class="nav-link active" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'cours:support_create' %}"><i class="bi bi-upload"></i> Publier Support</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'travaux:teacher_travaux_list' %}"><i class="bi bi-file-earmark-text"></i> Mes Travaux</a></li>
-{% endblock %}
+{# Les liens de navigation sont déjà définis dans le template de base #}
 
 {% block content %}
 <div class="row mb-4">

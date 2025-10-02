@@ -2,11 +2,7 @@
 
 {% block title %}Étudiants - Administration{% endblock %}
 
-{% block navbar_links %}
-<li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-<li class="nav-item"><a class="nav-link active" href="{% url 'admin_student_list' %}"><i class="bi bi-people"></i> Étudiants</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'admin_teacher_list' %}"><i class="bi bi-person-workspace"></i> Enseignants</a></li>
-{% endblock %}
+{# Les liens de navigation sont déjà définis dans le template de base #}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -80,9 +76,11 @@
             </td>
             <td>{% if s.is_active %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-secondary">Non</span>{% endif %}</td>
             <td class="text-end">
-              <a href="{% url 'admin_student_detail' s.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
-              <a href="{% url 'admin_student_toggle_active' s.id %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-power"></i></a>
-              <a href="{% url 'admin_student_reset_password' s.id %}" class="btn btn-outline-warning btn-sm"><i class="bi bi-key"></i></a>
+              <button type="button" class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#viewStudentModal" data-student-id="{{ s.id }}" data-student-matricule="{{ s.matricule }}" data-student-name="{{ s.get_full_name }}" title="Voir détails"><i class="bi bi-eye"></i></button>
+              <button type="button" class="btn btn-outline-success btn-sm" data-bs-toggle="modal" data-bs-target="#editStudentModal" data-student-id="{{ s.id }}" data-student-matricule="{{ s.matricule }}" data-student-name="{{ s.get_full_name }}" title="Modifier"><i class="bi bi-pencil"></i></button>
+              <a href="{% url 'admin_student_toggle_active' s.id %}" class="btn btn-outline-secondary btn-sm" title="Activer/Désactiver"><i class="bi bi-power"></i></a>
+              <a href="{% url 'admin_student_reset_password' s.id %}" class="btn btn-outline-warning btn-sm" title="Réinitialiser mot de passe"><i class="bi bi-key"></i></a>
+              <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteStudentModal" data-student-id="{{ s.id }}" data-student-matricule="{{ s.matricule }}" data-student-name="{{ s.get_full_name }}" title="Supprimer"><i class="bi bi-trash"></i></button>
             </td>
           </tr>
           {% endfor %}
@@ -113,4 +111,319 @@
     {% endif %}
   </div>
 </div>
+
+<!-- Modal de visualisation des détails d'étudiant -->
+<div class="modal fade" id="viewStudentModal" tabindex="-1" aria-labelledby="viewStudentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewStudentModalLabel">Détails de l'étudiant</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-4 text-center mb-3">
+            <div id="student_photo" class="mb-3">
+              <img src="/static/images/default-avatar.png" alt="Photo de profil" class="rounded-circle" width="100" height="100" style="object-fit: cover;">
+            </div>
+            <h5 id="student_full_name" class="mb-1"></h5>
+            <span class="badge badge-uom-primary" id="student_matricule"></span>
+          </div>
+          <div class="col-md-8">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Identifiant</label>
+                <p id="student_username" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Email</label>
+                <p id="student_email" class="mb-0"></p>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Date de naissance</label>
+                <p id="student_birth_date" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Lieu de naissance</label>
+                <p id="student_birth_place" class="mb-0"></p>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Téléphone</label>
+                <p id="student_phone" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Statut</label>
+                <p id="student_status" class="mb-0"></p>
+              </div>
+            </div>
+            <hr>
+            <h6 class="text-uom-blue mb-3">Informations académiques</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Niveau</label>
+                <p id="student_niveau" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Filière</label>
+                <p id="student_filiere" class="mb-0"></p>
+              </div>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Faculté</label>
+                <p id="student_faculte" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Promotion</label>
+                <p id="student_promotion" class="mb-0"></p>
+              </div>
+            </div>
+            <hr>
+            <h6 class="text-uom-blue mb-3">Contact d'urgence</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Nom du contact</label>
+                <p id="student_emergency_contact" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Téléphone d'urgence</label>
+                <p id="student_emergency_phone" class="mb-0"></p>
+              </div>
+            </div>
+            <hr>
+            <h6 class="text-uom-blue mb-3">Informations système</h6>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Date d'inscription</label>
+                <p id="student_created_at" class="mb-0"></p>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label fw-bold">Dernière connexion</label>
+                <p id="student_last_login" class="mb-0"></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-uom-primary" onclick="editStudentFromView()">Modifier</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de modification d'étudiant -->
+<div class="modal fade" id="editStudentModal" tabindex="-1" aria-labelledby="editStudentModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editStudentModalLabel">Modifier l'étudiant</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editStudentForm" method="post">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Matricule</label>
+              <input type="text" class="form-control" name="matricule" id="edit_matricule" readonly>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Identifiant</label>
+              <input type="text" class="form-control" name="username" id="edit_username">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Prénom</label>
+              <input type="text" class="form-control" name="first_name" id="edit_first_name">
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nom</label>
+              <input type="text" class="form-control" name="last_name" id="edit_last_name">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            <input type="email" class="form-control" name="email" id="edit_email">
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Niveau</label>
+              <select class="form-control" name="niveau" id="edit_niveau">
+                <option value="">-- Sélectionner --</option>
+                <option value="L1">Licence 1</option>
+                <option value="L2">Licence 2</option>
+                <option value="L3">Licence 3</option>
+                <option value="M1">Master 1</option>
+                <option value="M2">Master 2</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Filière</label>
+              <input type="text" class="form-control" name="filiere" id="edit_filiere">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Faculté</label>
+              <select class="form-control" name="faculte" id="edit_faculte">
+                <option value="">-- Sélectionner --</option>
+                {% for f in faculte_choices %}
+                  {% if f.0 %}
+                    <option value="{{ f.0 }}">{{ f.1 }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Promotion</label>
+              <select class="form-control" name="promotion" id="edit_promotion">
+                <option value="">-- Sélectionner --</option>
+                {% for p in promotion_choices %}
+                  {% if p.0 %}
+                    <option value="{{ p.0 }}">{{ p.1 }}</option>
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+          <button type="submit" class="btn btn-uom-primary">Sauvegarder</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal de suppression d'étudiant -->
+<div class="modal fade" id="deleteStudentModal" tabindex="-1" aria-labelledby="deleteStudentModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteStudentModalLabel">Supprimer l'étudiant</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Êtes-vous sûr de vouloir supprimer l'étudiant <strong id="delete_student_name"></strong> ?</p>
+        <p class="text-danger"><strong>Cette action est irréversible !</strong></p>
+        <div class="alert alert-warning">
+          <i class="bi bi-exclamation-triangle"></i>
+          <strong>Attention :</strong> Toutes les données associées à cet étudiant seront également supprimées.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+        <form id="deleteStudentForm" method="post" style="display: inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Supprimer définitivement</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Gestion de la modal de visualisation
+document.getElementById('viewStudentModal').addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var studentId = button.getAttribute('data-student-id');
+  var studentMatricule = button.getAttribute('data-student-matricule');
+  var studentName = button.getAttribute('data-student-name');
+  
+  // Afficher les informations de base
+  document.getElementById('student_full_name').textContent = studentName;
+  document.getElementById('student_matricule').textContent = studentMatricule;
+  
+  // Charger les données complètes de l'étudiant via AJAX
+  fetch('/admin/students/' + studentId + '/data/')
+    .then(response => response.json())
+    .then(data => {
+      // Informations personnelles
+      document.getElementById('student_username').textContent = data.username || '—';
+      document.getElementById('student_email').textContent = data.email || '—';
+      document.getElementById('student_birth_date').textContent = data.birth_date || '—';
+      document.getElementById('student_birth_place').textContent = data.birth_place || '—';
+      document.getElementById('student_phone').textContent = data.phone || '—';
+      document.getElementById('student_status').innerHTML = data.is_active ? '<span class="badge bg-success">Actif</span>' : '<span class="badge bg-secondary">Inactif</span>';
+      
+      // Informations académiques
+      document.getElementById('student_niveau').textContent = data.niveau || '—';
+      document.getElementById('student_filiere').textContent = data.filiere || '—';
+      document.getElementById('student_faculte').textContent = data.faculte_name || '—';
+      document.getElementById('student_promotion').textContent = data.promotion || '—';
+      
+      // Contact d'urgence
+      document.getElementById('student_emergency_contact').textContent = data.emergency_contact || '—';
+      document.getElementById('student_emergency_phone').textContent = data.emergency_phone || '—';
+      
+      // Informations système
+      document.getElementById('student_created_at').textContent = data.created_at || '—';
+      document.getElementById('student_last_login').textContent = data.last_login || 'Jamais';
+      
+      // Photo de profil
+      if (data.photo) {
+        document.getElementById('student_photo').innerHTML = '<img src="' + data.photo + '" alt="Photo de profil" class="rounded-circle" width="100" height="100" style="object-fit: cover;">';
+      }
+    })
+    .catch(error => console.error('Erreur:', error));
+});
+
+// Gestion de la modal d'édition
+document.getElementById('editStudentModal').addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var studentId = button.getAttribute('data-student-id');
+  var studentMatricule = button.getAttribute('data-student-matricule');
+  var studentName = button.getAttribute('data-student-name');
+  
+  // Mettre à jour le formulaire
+  document.getElementById('editStudentForm').action = '/admin/students/' + studentId + '/edit/';
+  document.getElementById('edit_matricule').value = studentMatricule;
+  
+  // Charger les données de l'étudiant via AJAX
+  fetch('/admin/students/' + studentId + '/data/')
+    .then(response => response.json())
+    .then(data => {
+      document.getElementById('edit_username').value = data.username || '';
+      document.getElementById('edit_first_name').value = data.first_name || '';
+      document.getElementById('edit_last_name').value = data.last_name || '';
+      document.getElementById('edit_email').value = data.email || '';
+      document.getElementById('edit_niveau').value = data.niveau || '';
+      document.getElementById('edit_filiere').value = data.filiere || '';
+      document.getElementById('edit_faculte').value = data.faculte || '';
+      document.getElementById('edit_promotion').value = data.promotion || '';
+    })
+    .catch(error => console.error('Erreur:', error));
+});
+
+// Gestion de la modal de suppression
+document.getElementById('deleteStudentModal').addEventListener('show.bs.modal', function (event) {
+  var button = event.relatedTarget;
+  var studentId = button.getAttribute('data-student-id');
+  var studentName = button.getAttribute('data-student-name');
+  
+  document.getElementById('deleteStudentForm').action = '/admin/students/' + studentId + '/delete/';
+  document.getElementById('delete_student_name').textContent = studentName;
+});
+
+// Fonction pour passer de la modal de visualisation à celle d'édition
+function editStudentFromView() {
+  // Fermer la modal de visualisation
+  var viewModal = bootstrap.Modal.getInstance(document.getElementById('viewStudentModal'));
+  viewModal.hide();
+  
+  // Ouvrir la modal d'édition
+  setTimeout(function() {
+    var editModal = new bootstrap.Modal(document.getElementById('editStudentModal'));
+    editModal.show();
+  }, 300);
+}
+</script>
 {% endblock %}

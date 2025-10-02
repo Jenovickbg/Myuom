@@ -1,0 +1,88 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Mes Cours - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">Mes Cours</h2>
+    <div>
+      {% if promotion %}
+        <span class="badge bg-info">Promotion: {{ promotion.nom_complet }}</span>
+      {% endif %}
+      {% if faculte %}
+        <span class="badge bg-secondary">{{ faculte.nom }}</span>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if cours %}
+    <div class="card card-uom">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Titre</th>
+                <th>Enseignant</th>
+                <th>Type</th>
+                <th>Niveau</th>
+                <th>Période</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in cours %}
+              <tr>
+                <td>
+                  <span class="badge bg-primary">{{ c.code }}</span>
+                </td>
+                <td>
+                  <strong>{{ c.titre }}</strong>
+                  {% if c.description %}
+                    <br><small class="text-muted">{{ c.description|truncatewords:15 }}</small>
+                  {% endif %}
+                </td>
+                <td>{{ c.enseignant.get_full_name|default:c.enseignant.username }}</td>
+                <td>
+                  <span class="badge bg-info">{{ c.get_type_cours_display }}</span>
+                </td>
+                <td>
+                  <span class="badge bg-secondary">{{ c.get_niveau_display }}</span>
+                </td>
+                <td>
+                  <small>{{ c.date_debut|date:"d/m/Y" }} - {{ c.date_fin|date:"d/m/Y" }}</small>
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'student_cours_detail' c.id %}" class="btn btn-uom-primary btn-sm">
+                    <i class="bi bi-eye"></i> Voir le cours
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="text-center">
+      <div class="card card-uom">
+        <div class="card-body">
+          <i class="bi bi-book" style="font-size: 3rem; color: var(--uom-gray);"></i>
+          <h5 class="mt-3">Aucun cours disponible</h5>
+          <p class="text-muted">
+            {% if not promotion %}
+              Vous n'êtes pas encore assigné à une promotion. Contactez l'administration.
+            {% else %}
+              Aucun cours n'est disponible pour votre promotion {{ promotion.nom_complet }}.
+            {% endif %}
+          </p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

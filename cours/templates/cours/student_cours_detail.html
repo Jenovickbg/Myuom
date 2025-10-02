@@ -1,0 +1,161 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}{{ cours.titre }} - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="mb-0" style="color: var(--uom-blue);">{{ cours.titre }}</h2>
+      <p class="text-muted mb-0">{{ cours.code }} - {{ cours.get_type_cours_display }}</p>
+    </div>
+    <div>
+      {% if not is_inscrit %}
+        <a href="{% url 'student_cours_inscription' cours.id %}" class="btn btn-uom-primary">
+          <i class="bi bi-person-plus"></i> S'inscrire
+        </a>
+      {% else %}
+        <span class="badge bg-success">Inscrit</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-8">
+      <div class="card card-uom mb-4">
+        <div class="card-header card-header-uom">
+          <h5 class="mb-0">Informations du cours</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Enseignant</label>
+              <p>{{ cours.enseignant.get_full_name|default:cours.enseignant.username }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Niveau</label>
+              <p><span class="badge bg-info">{{ cours.get_niveau_display }}</span></p>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Filière</label>
+              <p>{{ cours.filiere }}</p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Faculté</label>
+              <p>
+                {% if cours.faculte %}
+                  <span class="badge bg-secondary">{{ cours.faculte.nom }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </p>
+            </div>
+          </div>
+          
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Promotion</label>
+              <p>
+                {% if cours.promotion %}
+                  <span class="badge bg-success">{{ cours.promotion.nom_complet }}</span>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </p>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Période</label>
+              <p>{{ cours.date_debut|date:"d/m/Y" }} - {{ cours.date_fin|date:"d/m/Y" }}</p>
+            </div>
+          </div>
+          
+          {% if cours.description %}
+          <div class="mb-3">
+            <label class="form-label fw-bold">Description</label>
+            <p>{{ cours.description }}</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Supports de cours -->
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <h5 class="mb-0">Supports de cours</h5>
+        </div>
+        <div class="card-body">
+          {% if supports %}
+            <div class="list-group">
+              {% for support in supports %}
+              <div class="list-group-item">
+                <div class="d-flex w-100 justify-content-between">
+                  <div>
+                    <h6 class="mb-1">{{ support.titre }}</h6>
+                    {% if support.description %}
+                      <p class="mb-1 text-muted">{{ support.description }}</p>
+                    {% endif %}
+                    <small class="text-muted">
+                      <span class="badge bg-primary">{{ support.get_type_support_display }}</span>
+                      {% if support.taille_fichier %}
+                        - {{ support.taille_fichier|filesizeformat }}
+                      {% endif %}
+                      - {{ support.date_publication|date:"d/m/Y à H:i" }}
+                    </small>
+                  </div>
+                  <div>
+                    <a href="{{ support.fichier.url }}" class="btn btn-outline-primary btn-sm" download>
+                      <i class="bi bi-download"></i> Télécharger
+                    </a>
+                  </div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          {% else %}
+            <div class="text-center text-muted">
+              <i class="bi bi-file-earmark" style="font-size: 2rem;"></i>
+              <p class="mt-2">Aucun support de cours disponible pour le moment.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+    
+    <div class="col-md-4">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <h6 class="mb-0">Statut</h6>
+        </div>
+        <div class="card-body">
+          {% if is_inscrit %}
+            <div class="alert alert-success">
+              <i class="bi bi-check-circle"></i>
+              <strong>Inscrit</strong><br>
+              <small>Vous êtes inscrit à ce cours.</small>
+            </div>
+          {% else %}
+            <div class="alert alert-warning">
+              <i class="bi bi-exclamation-circle"></i>
+              <strong>Non inscrit</strong><br>
+              <small>Inscrivez-vous pour accéder aux contenus.</small>
+            </div>
+          {% endif %}
+          
+          <div class="mt-3">
+            <h6>Informations</h6>
+            <ul class="list-unstyled">
+              <li><i class="bi bi-calendar"></i> Début: {{ cours.date_debut|date:"d/m/Y" }}</li>
+              <li><i class="bi bi-calendar-check"></i> Fin: {{ cours.date_fin|date:"d/m/Y" }}</li>
+              <li><i class="bi bi-person"></i> Enseignant: {{ cours.enseignant.get_full_name|default:cours.enseignant.username }}</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

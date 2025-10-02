@@ -183,6 +183,46 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    {% if user.is_student_user %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-house"></i> Tableau de bord</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'cours:student_cours_list' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'student_profil' %}"><i class="bi bi-person"></i> Profil</a></li>
+                    {% elif user.is_teacher_user %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'teacher_dashboard' %}"><i class="bi bi-house"></i> Tableau de bord</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_cours_list' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+                        <li class="nav-item"><a class="nav-link" href="{% url 'teacher_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+                    {% elif user.is_admin_user or user.is_superuser %}
+                        <li class="nav-item"><a class="nav-link" href="{% url 'admin_dashboard' %}"><i class="bi bi-house"></i> Tableau de bord</a></li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-people"></i> Utilisateurs
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'admin_student_list' %}"><i class="bi bi-person"></i> Étudiants</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_teacher_list' %}"><i class="bi bi-person-badge"></i> Enseignants</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-book"></i> Cours
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'cours:admin_cours_list' %}"><i class="bi bi-list"></i> Liste des cours</a></li>
+                                <li><a class="dropdown-item" href="{% url 'cours:admin_cours_create' %}"><i class="bi bi-plus"></i> Créer un cours</a></li>
+                            </ul>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-gear"></i> Administration
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="{% url 'admin_faculte_list' %}"><i class="bi bi-building"></i> Facultés</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_promotion_list' %}"><i class="bi bi-calendar"></i> Promotions</a></li>
+                            </ul>
+                        </li>
+                    {% endif %}
                     {% block navbar_links %}{% endblock %}
                 </ul>
                 <ul class="navbar-nav">

@@ -26,13 +26,6 @@ class CustomLoginForm(AuthenticationForm):
 
 class PasswordChangeFirstLoginForm(forms.Form):
     """Formulaire de changement de mot de passe à la première connexion"""
-    old_password = forms.CharField(
-        label="Ancien mot de passe",
-        widget=forms.PasswordInput(attrs={
-            'class': 'form-control',
-            'placeholder': 'Mot de passe temporaire'
-        })
-    )
     new_password1 = forms.CharField(
         label="Nouveau mot de passe",
         widget=forms.PasswordInput(attrs={
@@ -53,28 +46,24 @@ class PasswordChangeFirstLoginForm(forms.Form):
         self.user = user
         super().__init__(*args, **kwargs)
 
-    def clean_old_password(self):
-        old_password = self.cleaned_data.get('old_password')
-        if not self.user.check_password(old_password):
-            raise forms.ValidationError("L'ancien mot de passe est incorrect.")
-        return old_password
-
     def clean(self):
         cleaned_data = super().clean()
         password1 = cleaned_data.get('new_password1')
         password2 = cleaned_data.get('new_password2')
-
+        
         if password1 and password2:
             if password1 != password2:
-                raise forms.ValidationError("Les deux mots de passe ne correspondent pas.")
+                raise forms.ValidationError("Les mots de passe ne correspondent pas.")
             if len(password1) < 8:
                 raise forms.ValidationError("Le mot de passe doit contenir au moins 8 caractères.")
         
         return cleaned_data
-
+    
     def save(self):
+        """Sauvegarder le nouveau mot de passe"""
         password = self.cleaned_data['new_password1']
         self.user.set_password(password)
+        self.user.is_first_login = False
         self.user.save()
         return self.user
 
@@ -176,23 +165,27 @@ class StudentCreationForm(forms.ModelForm):
 
     class Meta:
         model = CustomUser
-        fields = ['matricule', 'username', 'first_name', 'last_name', 'email', 'user_type']
+        fields = ['matricule', 'username', 'first_name', 'last_name', 'email']
         widgets = {
             'matricule': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'UOM2025-001'}),
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Identifiant'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Prénom'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
-            'user_type': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user_type'].initial = 'etudiant'
         
         # Définir les querysets pour les champs de relation
         self.fields['faculte'].queryset = Faculte.objects.filter(is_active=True).order_by('nom')
         self.fields['promotion'].queryset = Promotion.objects.filter(is_active=True).order_by('-annee_debut')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # S'assurer que user_type est toujours 'etudiant'
+        cleaned_data['user_type'] = 'etudiant'
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
@@ -215,8 +208,8 @@ class StudentCreationForm(forms.ModelForm):
         return user
 
 
-class TeacherCreationForm(UserCreationForm):
-    """Formulaire de création d'un enseignant par l'admin"""
+class TeacherCreationForm(forms.ModelForm):
+    """Formulaire de création d'un enseignant par l'admin (sans mot de passe)"""
     department = forms.CharField(
         label="Département",
         max_length=100,
@@ -228,29 +221,51 @@ class TeacherCreationForm(UserCreationForm):
         max_length=100,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Réseaux'})
     )
+    
+    office = forms.CharField(
+        label="Bureau",
+        max_length=50,
+        required=False,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Bureau 101'})
+    )
+    
+    faculte = forms.ModelChoiceField(
+        label="Faculté",
+        queryset=Faculte.objects.none(),  # Sera défini dans __init__
+        empty_label="-- Sélectionner --",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )
 
     class Meta:
         model = CustomUser
-        fields = ['matricule', 'username', 'first_name', 'last_name', 'email', 'user_type']
+        fields = ['matricule', 'username', 'first_name', 'last_name', 'email']
         widgets = {
             'matricule': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'UOM2025-E001'}),
             'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Identifiant'}),
             'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Prénom'}),
             'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom'}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'Email'}),
-            'user_type': forms.HiddenInput(),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['user_type'].initial = 'enseignant'
-        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        
+        # Définir les querysets pour les champs de relation
+        self.fields['faculte'].queryset = Faculte.objects.filter(is_active=True).order_by('nom')
+
+    def clean(self):
+        cleaned_data = super().clean()
+        # S'assurer que user_type est toujours 'enseignant'
+        cleaned_data['user_type'] = 'enseignant'
+        return cleaned_data
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.user_type = 'enseignant'
         user.is_first_login = True
+        # Définir le mot de passe par défaut
+        user.set_password('12345678')
         
         if commit:
             user.save()
@@ -258,7 +273,9 @@ class TeacherCreationForm(UserCreationForm):
             TeacherProfile.objects.create(
                 user=user,
                 department=self.cleaned_data['department'],
-                speciality=self.cleaned_data['speciality']
+                speciality=self.cleaned_data['speciality'],
+                office=self.cleaned_data['office'],
+                faculte=self.cleaned_data['faculte']
             )
         
         return user
