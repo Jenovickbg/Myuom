@@ -2,6 +2,50 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import RegexValidator
 from django.utils import timezone
+from PIL import Image
+from io import BytesIO
+from django.core.files.uploadedfile import InMemoryUploadedFile
+import sys
+
+
+class Faculte(models.Model):
+    """Modèle pour gérer les facultés"""
+    code = models.CharField(max_length=10, unique=True, help_text="Code de la faculté (ex: FSI)")
+    nom = models.CharField(max_length=100, help_text="Nom complet de la faculté")
+    description = models.TextField(blank=True, help_text="Description de la faculté")
+    is_active = models.BooleanField(default=True, help_text="Faculté active")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Faculté"
+        verbose_name_plural = "Facultés"
+        ordering = ['nom']
+
+    def __str__(self):
+        return f"{self.code} - {self.nom}"
+
+
+class Promotion(models.Model):
+    """Modèle pour gérer les promotions"""
+    annee_debut = models.IntegerField(help_text="Année de début (ex: 2023)")
+    annee_fin = models.IntegerField(help_text="Année de fin (ex: 2024)")
+    is_active = models.BooleanField(default=True, help_text="Promotion active")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Promotion"
+        verbose_name_plural = "Promotions"
+        ordering = ['-annee_debut']
+        unique_together = ['annee_debut', 'annee_fin']
+
+    def __str__(self):
+        return f"{self.annee_debut}-{self.annee_fin}"
+
+    @property
+    def nom_complet(self):
+        return f"{self.annee_debut}-{self.annee_fin}"
 
 
 class CustomUser(AbstractUser):
@@ -146,6 +190,23 @@ class StudentProfile(models.Model):
         max_length=100,
         blank=True,
         help_text="Filière d'étude"
+    )
+    
+    # Faculté et promotion (relations)
+    faculte = models.ForeignKey(
+        Faculte,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Faculté d'appartenance"
+    )
+    
+    promotion = models.ForeignKey(
+        Promotion,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        help_text="Promotion d'appartenance"
     )
     
     # Informations de contact d'urgence

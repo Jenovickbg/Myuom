@@ -18,9 +18,27 @@
 </div>
 
 <form method="get" class="mb-3">
-  <div class="input-group">
-    <input type="text" name="search" class="form-control" placeholder="Rechercher (matricule, nom, email)" value="{{ search_query }}">
-    <button class="btn btn-uom-primary" type="submit"><i class="bi bi-search"></i></button>
+  <div class="row g-3">
+    <div class="col-md-4">
+      <input type="text" name="search" class="form-control" placeholder="Rechercher (matricule, nom, email)" value="{{ search_query }}">
+    </div>
+    <div class="col-md-3">
+      <select name="faculte" class="form-select">
+        {% for value, label in faculte_choices %}
+        <option value="{{ value }}" {% if faculte_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-3">
+      <select name="promotion" class="form-select">
+        {% for value, label in promotion_choices %}
+        <option value="{{ value }}" {% if promotion_filter == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-2">
+      <button class="btn btn-uom-primary w-100" type="submit"><i class="bi bi-search"></i> Filtrer</button>
+    </div>
   </div>
 </form>
 
@@ -31,9 +49,11 @@
       <table class="table align-middle">
         <thead>
           <tr>
-            <th><a href="?order=matricule{% if search_query %}&search={{ search_query }}{% endif %}" class="text-decoration-none">Matricule</a></th>
-            <th><a href="?order=name{% if search_query %}&search={{ search_query }}{% endif %}" class="text-decoration-none">Nom</a></th>
+            <th><a href="?order=matricule{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Matricule</a></th>
+            <th><a href="?order=name{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Nom</a></th>
             <th>Email</th>
+            <th><a href="?order=faculte{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Faculté</a></th>
+            <th><a href="?order=promotion{% if search_query %}&search={{ search_query }}{% endif %}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}" class="text-decoration-none">Promotion</a></th>
             <th>Actif</th>
             <th></th>
           </tr>
@@ -44,6 +64,20 @@
             <td><span class="badge badge-uom-primary">{{ s.matricule }}</span></td>
             <td>{{ s.get_full_name|default:s.username }}</td>
             <td>{{ s.email|default:'—' }}</td>
+            <td>
+              {% if s.student_profile.faculte %}
+                <span class="badge bg-info">{{ s.student_profile.faculte.nom }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if s.student_profile.promotion %}
+                <span class="badge bg-secondary">{{ s.student_profile.promotion.nom_complet }}</span>
+              {% else %}
+                <span class="text-muted">—</span>
+              {% endif %}
+            </td>
             <td>{% if s.is_active %}<span class="badge bg-success">Oui</span>{% else %}<span class="badge bg-secondary">Non</span>{% endif %}</td>
             <td class="text-end">
               <a href="{% url 'admin_student_detail' s.id %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i></a>
@@ -60,7 +94,7 @@
     <nav aria-label="Pagination" class="mt-3">
       <ul class="pagination justify-content-center">
         {% if students.has_previous %}
-        <li class="page-item"><a class="page-link" href="?page={{ students.previous_page_number }}&order={{ order }}&search={{ search_query }}">Précédent</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ students.previous_page_number }}&order={{ order }}&search={{ search_query }}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}">Précédent</a></li>
         {% else %}
         <li class="page-item disabled"><span class="page-link">Précédent</span></li>
         {% endif %}
@@ -68,7 +102,7 @@
         <li class="page-item disabled"><span class="page-link">Page {{ students.number }} / {{ students.paginator.num_pages }}</span></li>
 
         {% if students.has_next %}
-        <li class="page-item"><a class="page-link" href="?page={{ students.next_page_number }}&order={{ order }}&search={{ search_query }}">Suivant</a></li>
+        <li class="page-item"><a class="page-link" href="?page={{ students.next_page_number }}&order={{ order }}&search={{ search_query }}{% if faculte_filter %}&faculte={{ faculte_filter }}{% endif %}{% if promotion_filter %}&promotion={{ promotion_filter }}{% endif %}">Suivant</a></li>
         {% else %}
         <li class="page-item disabled"><span class="page-link">Suivant</span></li>
         {% endif %}

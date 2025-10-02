@@ -1,0 +1,90 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Créer Étudiant - Administration{% endblock %}
+
+{% block navbar_links %}
+<li class="nav-item"><a class="nav-link" href="{% url 'admin_student_list' %}"><i class="bi bi-people"></i> Étudiants</a></li>
+<li class="nav-item"><a class="nav-link active" href="#"><i class="bi bi-person-plus"></i> Créer</a></li>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom">
+        <h5 class="mb-0"><i class="bi bi-person-plus"></i> Créer un étudiant</h5>
+      </div>
+      <div class="card-body">
+        <form method="post">
+          {% csrf_token %}
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Matricule</label>
+              {{ form.matricule }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Identifiant</label>
+              {{ form.username }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Prénom</label>
+              {{ form.first_name }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Nom</label>
+              {{ form.last_name }}
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email</label>
+            {{ form.email }}
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Niveau</label>
+              {{ form.niveau }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Filière</label>
+              {{ form.filiere }}
+            </div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Faculté</label>
+              {{ form.faculte }}
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Promotion</label>
+              {{ form.promotion }}
+            </div>
+          </div>
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle"></i>
+            <strong>Mot de passe automatique :</strong> L'étudiant recevra le mot de passe par défaut <code>12345678</code> et devra le changer lors de sa première connexion.
+          </div>
+          {% if form.non_field_errors %}
+          <div class="alert alert-danger">{{ form.non_field_errors }}</div>
+          {% endif %}
+          
+          {% for field in form %}
+            {% if field.errors %}
+              <div class="alert alert-danger">
+                <strong>{{ field.label }}:</strong>
+                {% for error in field.errors %}
+                  {{ error }}
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endfor %}
+          <div class="d-grid gap-2">
+            <button type="submit" class="btn btn-uom-primary"><i class="bi bi-check-circle"></i> Créer</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

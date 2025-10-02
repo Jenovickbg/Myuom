@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.db.models import Q
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 import csv
-from .models import CustomUser, StudentProfile, TeacherProfile
+from .models import CustomUser, StudentProfile, TeacherProfile, Faculte, Promotion
 from .forms import (
     CustomLoginForm, PasswordChangeFirstLoginForm, ProfileCompletionForm,
     StudentCreationForm, TeacherCreationForm, BulkStudentImportForm,
@@ -225,20 +225,41 @@ def admin_dashboard(request):
 
 @login_required
 def admin_student_list(request):
-    """Liste des étudiants"""
+    """Liste des étudiants avec filtrage par faculté et promotion"""
     if not request.user.is_admin_user() and not request.user.is_superuser:
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
     
     search_query = request.GET.get('search', '')
-    students = CustomUser.objects.filter(user_type='etudiant')
+    faculte_filter = request.GET.get('faculte', '')
+    promotion_filter = request.GET.get('promotion', '')
     
+    students = CustomUser.objects.filter(user_type='etudiant').select_related('student_profile')
+    
+    # Filtrage par recherche
     if search_query:
         students = students.filter(
             Q(matricule__icontains=search_query) |
             Q(first_name__icontains=search_query) |
-            Q(last_name__icontains=search_query)
+            Q(last_name__icontains=search_query) |
+            Q(email__icontains=search_query)
         )
+    
+    # Filtrage par faculté
+    if faculte_filter:
+        students = students.filter(student_profile__faculte__code=faculte_filter)
+    
+    # Filtrage par promotion
+    if promotion_filter:
+        # Parse la promotion (format: "2023-2024")
+        try:
+            annee_debut, annee_fin = promotion_filter.split('-')
+            students = students.filter(
+                student_profile__promotion__annee_debut=int(annee_debut),
+                student_profile__promotion__annee_fin=int(annee_fin)
+            )
+        except (ValueError, AttributeError):
+            pass  # Ignore les valeurs invalides
     
     # Tri
     order = request.GET.get('order', 'created')
@@ -246,6 +267,10 @@ def admin_student_list(request):
         students = students.order_by('last_name', 'first_name')
     elif order == 'matricule':
         students = students.order_by('matricule')
+    elif order == 'faculte':
+        students = students.order_by('student_profile__faculte', 'last_name')
+    elif order == 'promotion':
+        students = students.order_by('student_profile__promotion__annee_debut', 'last_name')
     else:
         students = students.order_by('-created_at')
 
@@ -259,9 +284,24 @@ def admin_student_list(request):
     except EmptyPage:
         students_page = paginator.page(paginator.num_pages)
 
+    # Options pour les filtres
+    faculte_choices = [('', 'Toutes les facultés')] + [(f.code, f.nom) for f in Faculte.objects.filter(is_active=True).order_by('nom')]
+    
+    # Récupérer les promotions existantes
+    existing_promotions = CustomUser.objects.filter(
+        user_type='etudiant',
+        student_profile__promotion__isnull=False
+    ).values_list('student_profile__promotion__annee_debut', 'student_profile__promotion__annee_fin').distinct().order_by('student_profile__promotion__annee_debut')
+    
+    promotion_choices = [('', 'Toutes les promotions')] + [(f"{debut}-{fin}", f"{debut}-{fin}") for debut, fin in existing_promotions]
+    
     return render(request, 'users/admin_student_list.html', {
         'students': students_page,
         'search_query': search_query,
+        'faculte_filter': faculte_filter,
+        'promotion_filter': promotion_filter,
+        'faculte_choices': faculte_choices,
+        'promotion_choices': promotion_choices,
         'order': order,
         'paginator': paginator,
     })
@@ -277,9 +317,17 @@ def admin_student_create(request):
     if request.method == 'POST':
         form = StudentCreationForm(request.POST)
         if form.is_valid():
-            student = form.save()
-            messages.success(request, f"Étudiant {student.matricule} créé avec succès.")
-            return redirect('admin_student_list')
+            try:
+                student = form.save()
+                messages.success(request, f"Étudiant {student.matricule} créé avec succès.")
+                return redirect('admin_student_list')
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la création : {str(e)}")
+        else:
+            # Afficher les erreurs de validation
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = StudentCreationForm()
     
@@ -321,7 +369,7 @@ def admin_student_reset_password(request, user_id):
         return redirect('login')
     
     student = get_object_or_404(CustomUser, id=user_id, user_type='etudiant')
-    default_password = "123456"
+    default_password = "12345678"
     student.set_password(default_password)
     student.is_first_login = True
     student.save()
@@ -578,4 +626,28 @@ def student_profil(request):
         'form': user_form,
         'profile_form': profile_form,
     })
+
+
+# ======================== GESTION FACULTÉS ET PROMOTIONS ========================
+
+@login_required
+def admin_faculte_list(request):
+    """Liste des facultés"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    facultes = Faculte.objects.all().order_by('nom')
+    return render(request, 'users/admin_faculte_list.html', {'facultes': facultes})
+
+
+@login_required
+def admin_promotion_list(request):
+    """Liste des promotions"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    promotions = Promotion.objects.all().order_by('-annee_debut')
+    return render(request, 'users/admin_promotion_list.html', {'promotions': promotions})
 

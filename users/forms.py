@@ -1,7 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, PasswordChangeForm
 from django.contrib.auth import get_user_model
-from .models import CustomUser, StudentProfile, TeacherProfile
+from .models import CustomUser, StudentProfile, TeacherProfile, Faculte, Promotion
 
 User = get_user_model()
 
@@ -121,28 +121,24 @@ class ProfileCompletionForm(forms.ModelForm):
 
 
 class StudentProfileForm(forms.ModelForm):
-    """Édition des informations académiques de l'étudiant"""
+    """Édition des informations académiques de l'étudiant (restreint)"""
     class Meta:
         model = StudentProfile
-        fields = ['photo', 'niveau', 'filiere', 'emergency_contact', 'emergency_phone']
+        fields = ['photo', 'emergency_contact', 'emergency_phone']  # Retiré niveau, filiere, faculte, promotion
         widgets = {
             'photo': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
-            'niveau': forms.Select(attrs={'class': 'form-control'}),
-            'filiere': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Filière d'étude"}),
             'emergency_contact': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Nom du contact d'urgence"}),
             'emergency_phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Téléphone d'urgence"}),
         }
         labels = {
             'photo': 'Photo de profil',
-            'niveau': 'Niveau',
-            'filiere': 'Filière',
             'emergency_contact': "Contact d'urgence",
             'emergency_phone': "Téléphone d'urgence",
         }
 
 
-class StudentCreationForm(UserCreationForm):
-    """Formulaire de création d'un étudiant par l'admin"""
+class StudentCreationForm(forms.ModelForm):
+    """Formulaire de création d'un étudiant par l'admin (sans mot de passe)"""
     niveau = forms.ChoiceField(
         label="Niveau",
         choices=[
@@ -161,6 +157,22 @@ class StudentCreationForm(UserCreationForm):
         max_length=100,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex: Informatique'})
     )
+    
+    faculte = forms.ModelChoiceField(
+        label="Faculté",
+        queryset=Faculte.objects.none(),  # Sera défini dans __init__
+        empty_label="-- Sélectionner --",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )
+    
+    promotion = forms.ModelChoiceField(
+        label="Promotion",
+        queryset=Promotion.objects.none(),  # Sera défini dans __init__
+        empty_label="-- Sélectionner --",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )
 
     class Meta:
         model = CustomUser
@@ -177,13 +189,17 @@ class StudentCreationForm(UserCreationForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['user_type'].initial = 'etudiant'
-        self.fields['password1'].widget.attrs.update({'class': 'form-control'})
-        self.fields['password2'].widget.attrs.update({'class': 'form-control'})
+        
+        # Définir les querysets pour les champs de relation
+        self.fields['faculte'].queryset = Faculte.objects.filter(is_active=True).order_by('nom')
+        self.fields['promotion'].queryset = Promotion.objects.filter(is_active=True).order_by('-annee_debut')
 
     def save(self, commit=True):
         user = super().save(commit=False)
         user.user_type = 'etudiant'
         user.is_first_login = True
+        # Définir le mot de passe par défaut
+        user.set_password('12345678')
         
         if commit:
             user.save()
@@ -191,7 +207,9 @@ class StudentCreationForm(UserCreationForm):
             StudentProfile.objects.create(
                 user=user,
                 niveau=self.cleaned_data['niveau'],
-                filiere=self.cleaned_data['filiere']
+                filiere=self.cleaned_data['filiere'],
+                faculte=self.cleaned_data['faculte'],
+                promotion=self.cleaned_data['promotion']
             )
         
         return user
