@@ -582,17 +582,40 @@ def student_cours_detail(request, cours_id):
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
     
-    # Vérifier que l'étudiant est inscrit au cours
+    # Récupérer le cours
     try:
-        from cours.models import InscriptionCours, Cours
-        inscription = InscriptionCours.objects.get(
-            etudiant=request.user,
-            cours_id=cours_id,
-            is_actif=True
+        from cours.models import Cours
+        cours = Cours.objects.get(
+            id=cours_id,
+            is_actif=True,
+            is_visible_etudiants=True
         )
-        cours = inscription.cours
-    except InscriptionCours.DoesNotExist:
-        messages.error(request, "Vous n'êtes pas inscrit à ce cours.")
+    except Cours.DoesNotExist:
+        messages.error(request, "Cours non trouvé.")
+        return redirect('cours:student_cours_list')
+    
+    # Vérifier que l'étudiant peut accéder à ce cours selon sa promotion, faculté et niveau
+    try:
+        student_profile = request.user.student_profile
+        promotion = student_profile.promotion
+        faculte = student_profile.faculte
+        niveau_etudiant = student_profile.niveau
+        
+        # Vérifier la correspondance
+        if cours.promotion and cours.promotion != promotion:
+            messages.error(request, "Ce cours ne correspond pas à votre promotion.")
+            return redirect('cours:student_cours_list')
+        
+        if cours.faculte and cours.faculte != faculte:
+            messages.error(request, "Ce cours ne correspond pas à votre faculté.")
+            return redirect('cours:student_cours_list')
+        
+        if cours.niveau and cours.niveau != niveau_etudiant:
+            messages.error(request, "Ce cours ne correspond pas à votre niveau.")
+            return redirect('cours:student_cours_list')
+            
+    except Exception as e:
+        messages.error(request, "Profil étudiant incomplet. Veuillez contacter l'administrateur.")
         return redirect('cours:student_cours_list')
     
     # Récupérer les TP associés au cours
@@ -652,7 +675,6 @@ def student_cours_detail(request, cours_id):
     
     context = {
         'cours': cours,
-        'inscription': inscription,
         'travaux_ouverts': travaux_ouverts,
         'travaux_fermes': travaux_fermes,
         'travaux_termines': travaux_termines,
@@ -664,42 +686,84 @@ def student_cours_detail(request, cours_id):
 
 @login_required
 def student_travaux(request):
-    """Liste des travaux publiés et remises de l'étudiant"""
-    if not request.user.is_student():
+    """Liste des travaux publiés et remises de l'étudiant selon sa promotion, faculté et niveau"""
+    if not request.user.is_student_user():
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
 
     try:
         from travaux.models import Travail, RemiseTravail
+        from cours.models import Cours
         from django.utils import timezone
 
-        profil_niveau = getattr(getattr(request.user, 'student_profile', None), 'niveau', None)
+        # Récupérer les informations du profil étudiant
+        student_profile = request.user.student_profile
+        promotion = student_profile.promotion
+        faculte = student_profile.faculte
+        niveau_etudiant = student_profile.niveau
 
-        travaux = (
-            Travail.objects
-            .filter(is_visible_etudiants=True, statut__in=['publie', 'ferme'])
-            .filter(niveau=profil_niveau) if profil_niveau else Travail.objects.none()
+        # Récupérer les cours de l'étudiant selon sa promotion, faculté et niveau
+        cours_etudiant = Cours.objects.filter(
+            is_actif=True,
+            is_visible_etudiants=True
         )
+        
+        if promotion:
+            cours_etudiant = cours_etudiant.filter(promotion=promotion)
+        if faculte:
+            cours_etudiant = cours_etudiant.filter(faculte=faculte)
+        if niveau_etudiant:
+            cours_etudiant = cours_etudiant.filter(niveau=niveau_etudiant)
 
-        remises = (
-            RemiseTravail.objects
-            .filter(etudiant=request.user)
-            .select_related('travail')
-            .order_by('-date_remise')
-        )
+        # Récupérer les travaux des cours de l'étudiant
+        travaux = Travail.objects.filter(
+            cours__in=cours_etudiant,
+            is_visible_etudiants=True,
+            statut__in=['publie', 'ferme']
+        ).select_related('cours', 'cours__enseignant').order_by('-date_creation')
 
-        # Séparer en ouverts/fermés
-        travaux_ouverts = [t for t in travaux if t.is_remise_ouverte()]
-        travaux_fermes = [t for t in travaux if not t.is_remise_ouverte()]
-    except:
+        # Récupérer les remises de l'étudiant
+        remises = RemiseTravail.objects.filter(
+            etudiant=request.user,
+            travail__in=travaux
+        ).select_related('travail', 'travail__cours').order_by('-date_remise')
+
+        # Créer un dictionnaire des remises par travail
+        remises_dict = {remise.travail.id: remise for remise in remises}
+
+        # Classer les travaux
         travaux_ouverts = []
         travaux_fermes = []
+        travaux_termines = []
+
+        for travail in travaux:
+            remise = remises_dict.get(travail.id)
+            
+            if remise:
+                if remise.statut in ['remis', 'en_cours_correction']:
+                    travaux_ouverts.append((travail, remise))
+                elif remise.statut in ['corrige', 'note_finalisee']:
+                    travaux_termines.append((travail, remise))
+            else:
+                # Pas de remise encore
+                if travail.is_remise_ouverte():
+                    travaux_ouverts.append((travail, None))
+                else:
+                    travaux_fermes.append((travail, None))
+
+    except Exception as e:
+        travaux_ouverts = []
+        travaux_fermes = []
+        travaux_termines = []
         remises = []
+        messages.warning(request, "Profil étudiant incomplet. Veuillez contacter l'administrateur.")
 
     return render(request, 'users/student_travaux.html', {
         'travaux_ouverts': travaux_ouverts,
         'travaux_fermes': travaux_fermes,
+        'travaux_termines': travaux_termines,
         'remises': remises,
+        'niveau_etudiant': getattr(request.user.student_profile, 'niveau', None) if hasattr(request.user, 'student_profile') else None,
         'now': timezone.now(),
     })
 
@@ -707,9 +771,19 @@ def student_travaux(request):
 @login_required
 def student_resultats(request):
     """Consultation des notes par UE et semestre"""
-    if not request.user.is_student():
+    if not request.user.is_student_user():
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
+
+    # Vérifier si les résultats sont activés
+    try:
+        from resultats.models import ConfigurationResultats
+        if not ConfigurationResultats.get_resultats_actives():
+            messages.info(request, "La consultation des résultats n'est pas encore activée.")
+            return render(request, 'resultats/student_resultats_disabled.html')
+    except:
+        messages.info(request, "La consultation des résultats n'est pas encore activée.")
+        return render(request, 'resultats/student_resultats_disabled.html')
 
     try:
         from resultats.models import Note, UE

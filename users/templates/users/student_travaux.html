@@ -1,96 +1,153 @@
 {% extends 'users/base.html' %}
+{% load static %}
 
 {% block title %}Mes Travaux - MyUOM{% endblock %}
 
-{# Les liens de navigation sont déjà définis dans le template de base #}
-
 {% block content %}
-<div class="row mb-4">
-  <div class="col-12 d-flex align-items-center justify-content-between">
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">
+      <i class="bi bi-file-earmark-text"></i> Mes Travaux
+    </h2>
     <div>
-      <h3 style="color: var(--uom-blue);"><i class="bi bi-file-earmark-text"></i> Travaux</h3>
-      <p class="text-uom-gray mb-0">Travaux ouverts, fermés et historique de mes remises</p>
+      {% if niveau_etudiant %}
+        <span class="badge bg-primary">Niveau: {{ niveau_etudiant }}</span>
+      {% endif %}
     </div>
   </div>
-</div>
+  
+  <!-- Information sur le filtrage -->
+  <div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Filtrage automatique :</strong> 
+    Seuls les travaux des cours correspondant à votre niveau ({{ niveau_etudiant|default:"N/A" }), 
+    votre promotion et votre faculté sont affichés.
+  </div>
 
-<div class="row g-4">
-  <div class="col-lg-6">
-    <div class="card card-uom h-100">
-      <div class="card-header card-header-uom"><i class="bi bi-unlock"></i> Travaux ouverts</div>
+  <!-- Travaux ouverts -->
+  <div class="col-12">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom">
+        <i class="bi bi-unlock"></i> Travaux ouverts (à faire ou en cours de correction)
+      </div>
       <div class="card-body">
         {% if travaux_ouverts %}
           <div class="list-group">
-            {% for t in travaux_ouverts %}
-            <div class="list-group-item">
-              <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1" style="color: var(--uom-blue);">{{ t.titre }}</h6>
-                <small class="text-muted"><i class="bi bi-clock"></i> {{ t.date_limite_remise|date:"d/m/Y H:i" }}</small>
+            {% for travail, remise in travaux_ouverts %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="flex-grow-1">
+                <h5 class="mb-1" style="color: var(--uom-blue);">{{ travail.titre }}</h5>
+                <p class="mb-1 text-muted">
+                  <i class="bi bi-book"></i> {{ travail.cours.titre }} ({{ travail.cours.code }})
+                  <br>
+                  <i class="bi bi-person"></i> {{ travail.cours.enseignant.get_full_name|default:travail.cours.enseignant.username }}
+                </p>
+                <small class="text-muted">
+                  <i class="bi bi-clock"></i> Date limite: {{ travail.date_limite_remise|date:"d/m/Y H:i" }}
+                  {% if remise %}
+                    <span class="badge bg-warning ms-2">Remis (en attente de correction)</span>
+                  {% else %}
+                    <span class="badge bg-primary ms-2">À faire</span>
+                  {% endif %}
+                </small>
               </div>
-              <p class="mb-1 text-uom-gray">{{ t.get_type_travail_display }} · {{ t.enseignant.get_full_name|default:t.enseignant.username }}</p>
-              <span class="badge bg-success">Ouvert</span>
+              <div class="ms-3">
+                {% if remise %}
+                  <a href="#" class="btn btn-sm btn-outline-warning me-2">
+                    <i class="bi bi-eye"></i> Voir remise
+                  </a>
+                {% else %}
+                  <a href="#" class="btn btn-sm btn-uom-primary">
+                    <i class="bi bi-upload"></i> Rendre
+                  </a>
+                {% endif %}
+              </div>
             </div>
             {% endfor %}
           </div>
         {% else %}
-          <p class="text-center text-uom-gray">Aucun travail ouvert.</p>
+          <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i>
+            Aucun travail ouvert pour le moment.
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Travaux terminés -->
+  <div class="col-12">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom">
+        <i class="bi bi-check-circle"></i> Travaux terminés (corrigés ou notés)
+      </div>
+      <div class="card-body">
+        {% if travaux_termines %}
+          <div class="list-group">
+            {% for travail, remise in travaux_termines %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="flex-grow-1">
+                <h5 class="mb-1" style="color: var(--uom-blue);">{{ travail.titre }}</h5>
+                <p class="mb-1 text-muted">
+                  <i class="bi bi-book"></i> {{ travail.cours.titre }} ({{ travail.cours.code }})
+                </p>
+                <small class="text-muted">
+                  <i class="bi bi-check-circle"></i> Corrigé le: {{ remise.date_correction|date:"d/m/Y H:i" }}
+                  <span class="badge bg-success ms-2">Noté: {{ remise.note|default:"N/A" }}/{{ travail.note_maximale }}</span>
+                </small>
+              </div>
+              <div class="ms-3">
+                <a href="#" class="btn btn-sm btn-outline-success">
+                  <i class="bi bi-journal-check"></i> Voir correction
+                </a>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i>
+            Aucun travail terminé pour le moment.
+          </div>
         {% endif %}
       </div>
     </div>
   </div>
   
-  <div class="col-lg-6">
-    <div class="card card-uom h-100">
-      <div class="card-header card-header-uom"><i class="bi bi-lock"></i> Travaux fermés</div>
+  <!-- Travaux fermés (non rendus) -->
+  <div class="col-12">
+    <div class="card card-uom">
+      <div class="card-header card-header-uom">
+        <i class="bi bi-lock"></i> Travaux fermés (non rendus)
+      </div>
       <div class="card-body">
         {% if travaux_fermes %}
           <div class="list-group">
-            {% for t in travaux_fermes %}
-            <div class="list-group-item">
-              <div class="d-flex w-100 justify-content-between">
-                <h6 class="mb-1" style="color: var(--uom-blue);">{{ t.titre }}</h6>
-                <small class="text-muted"><i class="bi bi-clock-history"></i> Limite {{ t.date_limite_remise|date:"d/m/Y H:i" }}</small>
+            {% for travail, remise in travaux_fermes %}
+            <div class="list-group-item d-flex justify-content-between align-items-center">
+              <div class="flex-grow-1">
+                <h5 class="mb-1" style="color: var(--uom-blue);">{{ travail.titre }}</h5>
+                <p class="mb-1 text-muted">
+                  <i class="bi bi-book"></i> {{ travail.cours.titre }} ({{ travail.cours.code }})
+                </p>
+                <small class="text-muted">
+                  <i class="bi bi-clock-history"></i> Date limite dépassée: {{ travail.date_limite_remise|date:"d/m/Y H:i" }}
+                  <span class="badge bg-danger ms-2">Fermé</span>
+                </small>
               </div>
-              <p class="mb-1 text-uom-gray">{{ t.get_type_travail_display }} · {{ t.enseignant.get_full_name|default:t.enseignant.username }}</p>
-              <span class="badge bg-secondary">Fermé</span>
+              <div class="ms-3">
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  <i class="bi bi-info-circle"></i> Détails
+                </button>
+              </div>
             </div>
             {% endfor %}
           </div>
         {% else %}
-          <p class="text-center text-uom-gray">Aucun travail fermé.</p>
-        {% endif %}
-      </div>
-    </div>
-  </div>
-</div>
-
-<div class="row g-4 mt-1">
-  <div class="col-12">
-    <div class="card card-uom">
-      <div class="card-header card-header-uom"><i class="bi bi-clock-history"></i> Mes remises</div>
-      <div class="card-body">
-        {% if remises %}
-        <div class="table-responsive">
-          <table class="table align-middle">
-            <thead>
-              <tr>
-                <th>Titre</th><th>Date remise</th><th>Statut</th><th>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for r in remises %}
-              <tr>
-                <td>{{ r.travail.titre }}</td>
-                <td>{{ r.date_remise|date:"d/m/Y H:i" }}</td>
-                <td><span class="badge bg-{{ r.get_statut_display_color }}">{{ r.get_statut_display }}</span></td>
-                <td>{% if r.note %}{{ r.note }} / {{ r.travail.note_maximale }}{% else %}<span class="text-uom-gray">—</span>{% endif %}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-          <p class="text-center text-uom-gray">Aucune remise enregistrée.</p>
+          <div class="alert alert-info text-center">
+            <i class="bi bi-info-circle"></i>
+            Aucun travail fermé pour le moment.
+          </div>
         {% endif %}
       </div>
     </div>

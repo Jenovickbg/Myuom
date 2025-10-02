@@ -1,0 +1,191 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Notes - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">
+      <i class="bi bi-list-check"></i> Gestion des Notes
+    </h2>
+    <div>
+      <a href="{% url 'resultats:admin_resultats_settings' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Retour aux Paramètres
+      </a>
+    </div>
+  </div>
+  
+  <!-- Information -->
+  <div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Gestion des notes :</strong> 
+    Consultez et gérez toutes les notes des étudiants.
+  </div>
+
+  {% if notes %}
+    <div class="card card-uom">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Étudiant</th>
+                <th>UE</th>
+                <th>Type</th>
+                <th>Titre</th>
+                <th>Note</th>
+                <th>Coeff.</th>
+                <th>Enseignant</th>
+                <th>Statut</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for note in notes %}
+              <tr>
+                <td>{{ note.date_evaluation|date:"d/m/Y" }}</td>
+                <td>
+                  <strong>{{ note.etudiant.get_full_name|default:note.etudiant.username }}</strong>
+                  <br><small class="text-muted">{{ note.etudiant.matricule|default:"N/A" }}</small>
+                </td>
+                <td>
+                  <span class="badge bg-primary">{{ note.ue.code }}</span>
+                  <br><small class="text-muted">{{ note.ue.nom|truncatechars:20 }}</small>
+                </td>
+                <td>
+                  <span class="badge bg-info">{{ note.get_type_note_display }}</span>
+                </td>
+                <td>{{ note.titre|truncatechars:30 }}</td>
+                <td>
+                  <strong class="{% if note.note_obtenue >= 10 %}text-success{% else %}text-danger{% endif %}">
+                    {{ note.note_obtenue }}/{{ note.note_maximale }}
+                  </strong>
+                  <br><small class="text-muted">{{ note.get_pourcentage|floatformat:1 }}%</small>
+                </td>
+                <td>{{ note.coefficient }}</td>
+                <td>{{ note.enseignant.get_full_name|default:note.enseignant.username }}</td>
+                <td>
+                  {% if note.is_publie %}
+                    <span class="badge bg-success">Publié</span>
+                  {% else %}
+                    <span class="badge bg-warning">Brouillon</span>
+                  {% endif %}
+                  {% if note.is_definitive %}
+                    <br><span class="badge bg-primary">Définitif</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#viewNoteModal{{ note.id }}">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-warning">
+                      <i class="bi bi-pencil"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="text-center">
+      <div class="card card-uom">
+        <div class="card-body">
+          <i class="bi bi-list-check" style="font-size: 3rem; color: var(--uom-gray);"></i>
+          <h4 class="mt-3" style="color: var(--uom-gray);">Aucune note trouvée</h4>
+          <p class="text-muted">Aucune note n'a été enregistrée pour le moment.</p>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+</div>
+
+<!-- Modal de visualisation des notes -->
+{% for note in notes %}
+<div class="modal fade" id="viewNoteModal{{ note.id }}" tabindex="-1" aria-labelledby="viewNoteModalLabel{{ note.id }}" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="viewNoteModalLabel{{ note.id }}">{{ note.titre }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row">
+          <div class="col-md-6">
+            <h6>Informations de la note</h6>
+            <p><strong>Titre:</strong> {{ note.titre }}</p>
+            <p><strong>Type:</strong> {{ note.get_type_note_display }}</p>
+            <p><strong>Note:</strong> 
+              <span class="{% if note.note_obtenue >= 10 %}text-success{% else %}text-danger{% endif %}">
+                {{ note.note_obtenue }}/{{ note.note_maximale }} ({{ note.get_pourcentage|floatformat:1 }}%)
+              </span>
+            </p>
+            <p><strong>Coefficient:</strong> {{ note.coefficient }}</p>
+            <p><strong>Date d'évaluation:</strong> {{ note.date_evaluation|date:"d/m/Y" }}</p>
+            <p><strong>Date de publication:</strong> {{ note.date_publication|date:"d/m/Y H:i" }}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Étudiant et UE</h6>
+            <p><strong>Étudiant:</strong> {{ note.etudiant.get_full_name|default:note.etudiant.username }}</p>
+            <p><strong>Matricule:</strong> {{ note.etudiant.matricule|default:"N/A" }}</p>
+            <p><strong>UE:</strong> {{ note.ue.code }} - {{ note.ue.nom }}</p>
+            <p><strong>Niveau:</strong> {{ note.ue.get_niveau_display }}</p>
+            <p><strong>Semestre:</strong> {{ note.ue.get_semestre_display }}</p>
+            <p><strong>Enseignant:</strong> {{ note.enseignant.get_full_name|default:note.enseignant.username }}</p>
+          </div>
+        </div>
+        {% if note.description %}
+        <hr>
+        <div class="row">
+          <div class="col-12">
+            <h6>Description</h6>
+            <p>{{ note.description }}</p>
+          </div>
+        </div>
+        {% endif %}
+        {% if note.commentaire %}
+        <hr>
+        <div class="row">
+          <div class="col-12">
+            <h6>Commentaire de l'enseignant</h6>
+            <p>{{ note.commentaire }}</p>
+          </div>
+        </div>
+        {% endif %}
+        <hr>
+        <div class="row">
+          <div class="col-12">
+            <h6>Statut</h6>
+            <p>
+              {% if note.is_publie %}
+                <span class="badge bg-success">Publié</span>
+              {% else %}
+                <span class="badge bg-warning">Brouillon</span>
+              {% endif %}
+              {% if note.is_definitive %}
+                <span class="badge bg-primary">Définitif</span>
+              {% else %}
+                <span class="badge bg-secondary">Provisoire</span>
+              {% endif %}
+            </p>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+        <button type="button" class="btn btn-uom-primary">Modifier</button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

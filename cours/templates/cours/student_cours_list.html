@@ -8,13 +8,25 @@
   <div class="d-flex justify-content-between align-items-center mb-4">
     <h2 class="mb-0" style="color: var(--uom-blue);">Mes Cours</h2>
     <div>
+      {% if niveau_etudiant %}
+        <span class="badge bg-primary">Niveau: {{ niveau_etudiant }}</span>
+      {% endif %}
       {% if promotion %}
-        <span class="badge bg-info">Promotion: {{ promotion.nom_complet }}</span>
+        <span class="badge bg-info">Promotion: {{ promotion.annee_debut }}-{{ promotion.annee_fin }}</span>
       {% endif %}
       {% if faculte %}
         <span class="badge bg-secondary">{{ faculte.nom }}</span>
       {% endif %}
     </div>
+  </div>
+  
+  <!-- Information sur le filtrage -->
+  <div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Filtrage automatique :</strong> 
+    Seuls les cours correspondant à votre niveau ({{ niveau_etudiant|default:"N/A" }}), 
+    votre promotion ({{ promotion.annee_debut|default:"N/A" }}-{{ promotion.annee_fin|default:"N/A" }}) 
+    et votre faculté ({{ faculte.nom|default:"N/A" }}) sont affichés.
   </div>
 
   {% if cours %}

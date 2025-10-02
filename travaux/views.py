@@ -39,25 +39,52 @@ def teacher_travaux_list(request):
 
 
 @login_required
-def teacher_travail_create(request):
-    """Création d'un travail"""
+def teacher_cours_selection(request):
+    """Sélection du cours pour créer un travail"""
     if not hasattr(request.user, 'user_type') or not request.user.is_teacher():
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
+
+    # Récupérer les cours de l'enseignant
+    from cours.models import Cours
+    cours = Cours.objects.filter(
+        enseignant=request.user,
+        is_actif=True
+    ).order_by('titre')
+
+    return render(request, 'travaux/teacher_cours_selection.html', {
+        'cours': cours,
+    })
+
+
+@login_required
+def teacher_travail_create(request, cours_id):
+    """Création d'un travail pour un cours spécifique"""
+    if not hasattr(request.user, 'user_type') or not request.user.is_teacher():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+
+    # Vérifier que le cours appartient à l'enseignant
+    from cours.models import Cours
+    cours = get_object_or_404(Cours, id=cours_id, enseignant=request.user, is_actif=True)
 
     if request.method == 'POST':
         form = TravailForm(request.POST, request.FILES)
         if form.is_valid():
             travail = form.save(commit=False)
             travail.enseignant = request.user
+            travail.cours = cours
             travail.save()
-            messages.success(request, f"Travail '{travail.titre}' créé avec succès.")
+            messages.success(request, f"Travail créé avec succès pour le cours {cours.code}.")
             return redirect('travaux:teacher_travaux_list')
         messages.error(request, "Veuillez corriger les erreurs.")
     else:
         form = TravailForm()
 
-    return render(request, 'travaux/teacher_travail_create.html', {'form': form})
+    return render(request, 'travaux/teacher_travail_create.html', {
+        'form': form,
+        'cours': cours,
+    })
 
 
 @login_required

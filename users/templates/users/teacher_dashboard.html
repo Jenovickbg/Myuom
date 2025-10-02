@@ -19,7 +19,7 @@
       <div class="card-body">
         <h5 class="card-title" style="color: var(--uom-blue);"><i class="bi bi-book"></i> Mes Cours</h5>
         <p class="text-uom-gray">Consultez la liste de vos cours et leurs informations.</p>
-        <a href="{% url 'cours:teacher_courses' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-arrow-right"></i> Ouvrir</a>
+        <a href="{% url 'cours:teacher_cours_list' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-arrow-right"></i> Ouvrir</a>
       </div>
     </div>
   </div>
@@ -28,7 +28,7 @@
       <div class="card-body">
         <h5 class="card-title" style="color: var(--uom-blue);"><i class="bi bi-upload"></i> Publier un support</h5>
         <p class="text-uom-gray">Mettez en ligne des supports (cours, TP, TD, corrigés).</p>
-        <a href="{% url 'cours:support_create' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-upload"></i> Publier</a>
+        <a href="{% url 'travaux:teacher_cours_selection' %}" class="btn btn-uom-primary btn-sm"><i class="bi bi-plus-circle"></i> Créer Travail</a>
       </div>
     </div>
   </div>

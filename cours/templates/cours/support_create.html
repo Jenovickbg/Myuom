@@ -4,8 +4,8 @@
 
 {% block navbar_links %}
 <li class="nav-item"><a class="nav-link" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-<li class="nav-item"><a class="nav-link active" href="{% url 'cours:support_create' %}"><i class="bi bi-upload"></i> Publier Support</a></li>
+<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_cours_list' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
+<li class="nav-item"><a class="nav-link active" href="{% url 'cours:teacher_cours_list' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
 {% endblock %}
 
 {% block content %}

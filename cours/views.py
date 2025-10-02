@@ -83,6 +83,9 @@ def admin_cours_list(request):
 
     promotion_choices = [('', 'Toutes les promotions')] + [(f"{debut}-{fin}", f"{debut}-{fin}") for debut, fin in existing_promotions]
     
+    # Récupérer la liste des enseignants pour les formulaires
+    enseignants = CustomUser.objects.filter(user_type='enseignant', is_active=True).order_by('last_name', 'first_name')
+    
     return render(request, 'cours/admin_cours_list.html', {
         'cours': cours_page,
         'search_query': search_query,
@@ -90,6 +93,7 @@ def admin_cours_list(request):
         'promotion_filter': promotion_filter,
         'faculte_choices': faculte_choices,
         'promotion_choices': promotion_choices,
+        'enseignants': enseignants,
         'order': order,
         'paginator': paginator,
     })
@@ -262,9 +266,99 @@ def teacher_cours_list(request):
     
     cours = Cours.objects.filter(enseignant=request.user).order_by('-date_creation')
     
-    return render(request, 'cours/teacher_cours_list.html', {
+    return render(request, 'cours/teacher_courses.html', {
         'cours': cours,
     })
+
+
+@login_required
+def teacher_cours_detail(request, cours_id):
+    """Détails d'un cours pour l'enseignant avec les TP/TD et supports"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+
+    # Récupérer le cours
+    try:
+        cours = Cours.objects.get(
+            id=cours_id,
+            enseignant=request.user,
+            is_actif=True
+        )
+    except Cours.DoesNotExist:
+        messages.error(request, "Cours non trouvé.")
+        return redirect('cours:teacher_cours_list')
+
+    # Récupérer les TP/TD associés au cours
+    travaux_ouverts = []
+    travaux_fermes = []
+    travaux_termines = []
+
+    try:
+        from travaux.models import Travail, RemiseTravail
+        from django.utils import timezone
+
+        # Récupérer tous les travaux du cours
+        travaux = Travail.objects.filter(
+            cours=cours,
+            is_visible_etudiants=True,
+            statut__in=['publie', 'ferme']
+        ).order_by('-date_creation')
+
+        # Récupérer les remises pour ce cours
+        remises = RemiseTravail.objects.filter(
+            travail__cours=cours
+        ).select_related('travail', 'etudiant')
+
+        # Créer un dictionnaire des remises par travail
+        remises_dict = {remise.travail.id: remise for remise in remises}
+
+        # Classer les travaux
+        for travail in travaux:
+            remise = remises_dict.get(travail.id)
+
+            if remise:
+                if remise.statut in ['remis', 'en_cours_correction']:
+                    travaux_ouverts.append((travail, remise))
+                elif remise.statut in ['corrige', 'note_finalisee']:
+                    travaux_termines.append((travail, remise))
+            else:
+                # Pas de remise encore - vérifier si la date limite est dépassée
+                from django.utils import timezone
+                if travail.date_limite_remise and travail.date_limite_remise > timezone.now():
+                    travaux_ouverts.append((travail, None))
+                else:
+                    travaux_fermes.append((travail, None))
+
+    except Exception as e:
+        messages.info(request, "La section des travaux n'est pas encore disponible.")
+
+    # Récupérer les supports de cours
+    supports_cours = []
+    try:
+        from cours.models import SupportCours
+        supports_cours = SupportCours.objects.filter(
+            cours=cours,
+            is_public=True
+        ).order_by('ordre_affichage', '-date_publication')
+    except Exception:
+        pass
+
+    # Statistiques
+    total_travaux = len(travaux_ouverts) + len(travaux_fermes) + len(travaux_termines)
+    total_remises = len([r for _, r in travaux_ouverts if r]) + len([r for _, r in travaux_termines if r])
+
+    context = {
+        'cours': cours,
+        'travaux_ouverts': travaux_ouverts,
+        'travaux_fermes': travaux_fermes,
+        'travaux_termines': travaux_termines,
+        'supports_cours': supports_cours,
+        'total_travaux': total_travaux,
+        'total_remises': total_remises,
+    }
+
+    return render(request, 'cours/teacher_cours_detail.html', context)
 
 
 @login_required
@@ -296,39 +390,54 @@ def teacher_cours_create(request):
 
 @login_required
 def student_cours_list(request):
-    """Liste des cours auxquels l'étudiant est inscrit"""
+    """Liste des cours disponibles pour un étudiant selon sa promotion et faculté"""
     if not request.user.is_student_user():
         messages.error(request, "Accès non autorisé.")
         return redirect('login')
     
-    # Récupérer les cours auxquels l'étudiant est inscrit
+    # Récupérer les informations du profil étudiant
     try:
-        inscriptions = InscriptionCours.objects.filter(
-            etudiant=request.user,
-            is_actif=True
-        ).select_related('cours', 'cours__enseignant', 'cours__faculte', 'cours__promotion')
-        
-        cours = [inscription.cours for inscription in inscriptions if inscription.cours.is_actif and inscription.cours.is_visible_etudiants]
-        
-        # Récupérer les informations du profil étudiant
-        try:
-            student_profile = request.user.student_profile
-            promotion = student_profile.promotion
-            faculte = student_profile.faculte
-        except:
-            promotion = None
-            faculte = None
-            
-    except Exception as e:
-        cours = []
+        student_profile = request.user.student_profile
+        promotion = student_profile.promotion
+        faculte = student_profile.faculte
+        niveau_etudiant = student_profile.niveau  # L1, L2, L3, M1, M2, etc.
+    except:
         promotion = None
         faculte = None
-        messages.info(request, "Aucun cours trouvé.")
+        niveau_etudiant = None
+        messages.warning(request, "Profil étudiant incomplet. Veuillez contacter l'administrateur.")
+        return render(request, 'cours/student_cours_list.html', {
+            'cours': [],
+            'promotion': None,
+            'faculte': None,
+            'niveau_etudiant': None,
+        })
+    
+    # Filtrer les cours selon la promotion, faculté ET niveau de l'étudiant
+    cours = Cours.objects.filter(
+        is_actif=True,
+        is_visible_etudiants=True
+    )
+    
+    # Filtrage par promotion
+    if promotion:
+        cours = cours.filter(promotion=promotion)
+    
+    # Filtrage par faculté
+    if faculte:
+        cours = cours.filter(faculte=faculte)
+    
+    # Filtrage par niveau (L1, L2, L3, M1, M2, etc.)
+    if niveau_etudiant:
+        cours = cours.filter(niveau=niveau_etudiant)
+    
+    cours = cours.order_by('-date_creation')
     
     return render(request, 'cours/student_cours_list.html', {
         'cours': cours,
         'promotion': promotion,
         'faculte': faculte,
+        'niveau_etudiant': niveau_etudiant,
     })
 
 

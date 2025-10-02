@@ -1,0 +1,200 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Mes Résultats - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">
+      <i class="bi bi-graph-up"></i> Mes Résultats
+    </h2>
+    <div>
+      {% if bulletins %}
+        <a href="{% url 'resultats:student_bulletin_pdf' bulletins.0.id %}" class="btn btn-uom-primary" target="_blank">
+          <i class="bi bi-download"></i> Télécharger Bulletin
+        </a>
+      {% endif %}
+    </div>
+  </div>
+  
+  <!-- Informations étudiant -->
+  <div class="alert alert-info mb-4">
+    <div class="row">
+      <div class="col-md-8">
+        <h6 class="mb-1"><i class="bi bi-person"></i> {{ request.user.get_full_name|default:request.user.username }}</h6>
+        <p class="mb-0 text-muted">Matricule: {{ request.user.matricule|default:"N/A" }}</p>
+      </div>
+      <div class="col-md-4 text-end">
+        {% if request.user.student_profile %}
+          <span class="badge bg-primary">{{ request.user.student_profile.niveau|default:"N/A" }}</span>
+          {% if request.user.student_profile.promotion %}
+            <span class="badge bg-info">{{ request.user.student_profile.promotion.annee_debut }}-{{ request.user.student_profile.promotion.annee_fin }}</span>
+          {% endif %}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Bulletins disponibles -->
+  {% if bulletins %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <i class="bi bi-file-earmark-text"></i> Bulletins Disponibles
+        </div>
+        <div class="card-body">
+          <div class="row">
+            {% for bulletin in bulletins %}
+            <div class="col-md-6 col-lg-4 mb-3">
+              <div class="card h-100">
+                <div class="card-body">
+                  <h6 class="card-title">{{ bulletin.annee_academique }}</h6>
+                  <p class="card-text">{{ bulletin.get_semestre_display }}</p>
+                  {% if bulletin.moyenne_semestre %}
+                    <p class="text-muted">Moyenne: <strong>{{ bulletin.moyenne_semestre }}/20</strong></p>
+                  {% endif %}
+                  <small class="text-muted">Publié le {{ bulletin.date_publication|date:"d/m/Y" }}</small>
+                </div>
+                <div class="card-footer">
+                  <a href="{% url 'resultats:student_bulletin_pdf' bulletin.id %}" class="btn btn-sm btn-uom-primary" target="_blank">
+                    <i class="bi bi-download"></i> Télécharger
+                  </a>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Moyennes par UE -->
+  {% if moyennes_ue %}
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <i class="bi bi-book"></i> Moyennes par Unité d'Enseignement
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Code UE</th>
+                  <th>Nom</th>
+                  <th>Niveau</th>
+                  <th>Semestre</th>
+                  <th>Crédits</th>
+                  <th>Moyenne</th>
+                  <th>Statut</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for ue_id, data in moyennes_ue.items %}
+                <tr>
+                  <td><span class="badge bg-primary">{{ data.ue.code }}</span></td>
+                  <td>{{ data.ue.nom }}</td>
+                  <td><span class="badge bg-info">{{ data.ue.get_niveau_display }}</span></td>
+                  <td><span class="badge bg-secondary">{{ data.ue.get_semestre_display }}</span></td>
+                  <td>{{ data.ue.credits }}</td>
+                  <td>
+                    <strong class="{% if data.moyenne >= 10 %}text-success{% else %}text-danger{% endif %}">
+                      {{ data.moyenne }}/20
+                    </strong>
+                  </td>
+                  <td>
+                    {% if data.moyenne >= 10 %}
+                      <span class="badge bg-success">Validé</span>
+                    {% else %}
+                      <span class="badge bg-danger">Non validé</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Détail des notes -->
+  {% if notes %}
+  <div class="row">
+    <div class="col-12">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <i class="bi bi-list-check"></i> Détail des Notes
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-hover">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>UE</th>
+                  <th>Type</th>
+                  <th>Titre</th>
+                  <th>Note</th>
+                  <th>Coeff.</th>
+                  <th>Enseignant</th>
+                  <th>Commentaire</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for note in notes %}
+                <tr>
+                  <td>{{ note.date_evaluation|date:"d/m/Y" }}</td>
+                  <td>
+                    <span class="badge bg-primary">{{ note.ue.code }}</span>
+                    <br><small class="text-muted">{{ note.ue.nom }}</small>
+                  </td>
+                  <td><span class="badge bg-info">{{ note.get_type_note_display }}</span></td>
+                  <td>{{ note.titre }}</td>
+                  <td>
+                    <strong class="{% if note.note_obtenue >= 10 %}text-success{% else %}text-danger{% endif %}">
+                      {{ note.note_obtenue }}/{{ note.note_maximale }}
+                    </strong>
+                    <br><small class="text-muted">{{ note.get_pourcentage|floatformat:1 }}%</small>
+                  </td>
+                  <td>{{ note.coefficient }}</td>
+                  <td>{{ note.enseignant.get_full_name|default:note.enseignant.username }}</td>
+                  <td>
+                    {% if note.commentaire %}
+                      <small class="text-muted">{{ note.commentaire|truncatewords:10 }}</small>
+                    {% else %}
+                      <span class="text-muted">—</span>
+                    {% endif %}
+                  </td>
+                </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Message si pas de résultats -->
+  {% if not notes and not moyennes_ue and not bulletins %}
+  <div class="text-center">
+    <div class="card card-uom">
+      <div class="card-body">
+        <i class="bi bi-graph-up" style="font-size: 3rem; color: var(--uom-gray);"></i>
+        <h4 class="mt-3" style="color: var(--uom-gray);">Aucun résultat disponible</h4>
+        <p class="text-muted">Vos résultats apparaîtront ici une fois publiés par vos enseignants.</p>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

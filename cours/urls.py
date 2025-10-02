@@ -14,6 +14,7 @@ urlpatterns = [
     
     # Vues enseignant
     path('teacher/cours/', views.teacher_cours_list, name='teacher_cours_list'),
+    path('teacher/cours/<int:cours_id>/', views.teacher_cours_detail, name='teacher_cours_detail'),
     path('teacher/cours/create/', views.teacher_cours_create, name='teacher_cours_create'),
     
     # Vues étudiant

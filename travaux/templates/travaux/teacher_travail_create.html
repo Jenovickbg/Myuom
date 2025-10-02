@@ -1,22 +1,44 @@
 {% extends 'users/base.html' %}
+{% load static %}
 
 {% block title %}Créer un Travail - MyUOM{% endblock %}
 
-{% block navbar_links %}
-<li class="nav-item"><a class="nav-link" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'travaux:teacher_travaux_list' %}"><i class="bi bi-file-earmark-text"></i> Mes Travaux</a></li>
-<li class="nav-item"><a class="nav-link active" href="{% url 'travaux:teacher_travail_create' %}"><i class="bi bi-plus-circle"></i> Créer Travail</a></li>
-{% endblock %}
-
 {% block content %}
-<div class="row justify-content-center">
-  <div class="col-lg-8">
-    <div class="card card-uom">
-      <div class="card-header card-header-uom">
-        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Créer un nouveau travail</h5>
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">
+      <i class="bi bi-plus-circle"></i> Créer un Travail
+    </h2>
+    <div>
+      <a href="{% url 'travaux:teacher_cours_selection' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Changer de Cours
+      </a>
+    </div>
+  </div>
+  
+  <!-- Informations du cours -->
+  {% if cours %}
+  <div class="alert alert-info mb-4">
+    <div class="row">
+      <div class="col-md-8">
+        <h6 class="mb-1"><i class="bi bi-book"></i> Cours sélectionné : {{ cours.titre }} ({{ cours.code }})</h6>
+        <p class="mb-0 text-muted">{{ cours.description|truncatewords:20 }}</p>
       </div>
-      <div class="card-body">
+      <div class="col-md-4 text-end">
+        <span class="badge bg-primary">{{ cours.get_type_cours_display }}</span>
+        <span class="badge bg-info">{{ cours.get_niveau_display }}</span>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Créer un nouveau travail</h5>
+        </div>
+        <div class="card-body">
         <form method="post" enctype="multipart/form-data">
           {% csrf_token %}
           

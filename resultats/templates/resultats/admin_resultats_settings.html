@@ -1,0 +1,105 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Paramètres des Résultats - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">
+      <i class="bi bi-gear"></i> Paramètres des Résultats
+    </h2>
+    <div>
+      <a href="{% url 'admin_dashboard' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left"></i> Retour au Dashboard
+      </a>
+    </div>
+  </div>
+  
+  <!-- Information -->
+  <div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Gestion des résultats :</strong> 
+    Activez ou désactivez l'affichage des résultats pour les étudiants.
+  </div>
+
+  <div class="row">
+    <div class="col-lg-8">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <i class="bi bi-toggle-on"></i> Activation des Résultats
+        </div>
+        <div class="card-body">
+          <form method="post">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+              <div class="form-check form-switch">
+                <input class="form-check-input" type="checkbox" id="resultats_actives" name="resultats_actives" 
+                       {% if resultats_actives %}checked{% endif %}>
+                <label class="form-check-label" for="resultats_actives">
+                  <strong>Activer l'affichage des résultats pour les étudiants</strong>
+                </label>
+              </div>
+              <div class="form-text">
+                Quand activé, les étudiants pourront consulter leurs notes et télécharger leurs bulletins.
+                Quand désactivé, l'onglet "Résultats" sera masqué pour les étudiants.
+              </div>
+            </div>
+
+            <div class="mb-4">
+              <h6>État actuel :</h6>
+              {% if resultats_actives %}
+                <span class="badge bg-success fs-6">
+                  <i class="bi bi-check-circle"></i> Résultats activés
+                </span>
+                <p class="text-muted mt-2">Les étudiants peuvent consulter leurs résultats.</p>
+              {% else %}
+                <span class="badge bg-danger fs-6">
+                  <i class="bi bi-x-circle"></i> Résultats désactivés
+                </span>
+                <p class="text-muted mt-2">Les étudiants ne peuvent pas consulter leurs résultats.</p>
+              {% endif %}
+            </div>
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+              <button type="submit" class="btn btn-uom-primary">
+                <i class="bi bi-save"></i> Sauvegarder les Paramètres
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="card card-uom">
+        <div class="card-header card-header-uom">
+          <i class="bi bi-info-circle"></i> Informations
+        </div>
+        <div class="card-body">
+          <h6>Fonctionnalités disponibles :</h6>
+          <ul class="list-unstyled">
+            <li><i class="bi bi-check text-success"></i> Consultation des notes</li>
+            <li><i class="bi bi-check text-success"></i> Moyennes par UE</li>
+            <li><i class="bi bi-check text-success"></i> Bulletins téléchargeables</li>
+            <li><i class="bi bi-check text-success"></i> Historique des résultats</li>
+          </ul>
+          
+          <hr>
+          
+          <h6>Actions rapides :</h6>
+          <div class="d-grid gap-2">
+            <a href="{% url 'resultats:admin_ue_list' %}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-book"></i> Gérer les UE
+            </a>
+            <a href="{% url 'resultats:admin_notes_list' %}" class="btn btn-outline-primary btn-sm">
+              <i class="bi bi-list-check"></i> Gérer les Notes
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

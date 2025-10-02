@@ -127,6 +127,9 @@ TIME_ZONE = 'UTC'
 
 USE_I18N = True
 
+# Paramètres personnalisés
+RESULTATS_ACTIVES = True  # Activer/désactiver l'affichage des résultats pour les étudiants
+
 USE_L10N = True
 
 USE_TZ = True

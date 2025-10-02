@@ -1,46 +1,103 @@
 {% extends 'users/base.html' %}
+{% load static %}
 
-{% block title %}Mes Cours (Enseignant) - MyUOM{% endblock %}
-
-{% block navbar_links %}
-<li class="nav-item"><a class="nav-link" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-<li class="nav-item"><a class="nav-link active" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'cours:support_create' %}"><i class="bi bi-upload"></i> Publier Support</a></li>
-{% endblock %}
+{% block title %}Mes Cours - MyUOM{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-  <div class="col-12 d-flex justify-content-between align-items-center">
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue);">Mes Cours</h2>
     <div>
-      <h3 style="color: var(--uom-blue);"><i class="bi bi-book"></i> Mes Cours</h3>
-      <p class="text-uom-gray mb-0">Supports publiés sur {{ supports_count }} cours</p>
-    </div>
-    <div>
-      <a class="btn btn-uom-primary" href="{% url 'cours:support_create' %}"><i class="bi bi-upload"></i> Publier un support</a>
+      <a class="btn btn-uom-primary" href="{% url 'travaux:teacher_cours_selection' %}">
+        <i class="bi bi-plus-circle"></i> Créer un Travail
+      </a>
     </div>
   </div>
-</div>
+  
+  <!-- Information -->
+  <div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle"></i>
+    <strong>Mes cours :</strong> 
+    Consultez vos cours et gérez les TP/TD et supports associés.
+  </div>
 
-<div class="row g-3">
-  {% if cours_list %}
-    {% for c in cours_list %}
-    <div class="col-md-6 col-lg-4">
-      <div class="card card-uom h-100">
-        <div class="card-body">
-          <h5 class="card-title" style="color: var(--uom-blue);">{{ c.code }}</h5>
-          <p class="card-text text-uom-gray">{{ c.titre }}</p>
-          <span class="badge badge-uom-yellow">{{ c.get_type_cours_display }}</span>
-          <span class="badge bg-secondary">{{ c.niveau }}</span>
-          <div class="mt-3">
-            <small class="text-muted">{{ c.date_debut|date:"d/m/Y" }} - {{ c.date_fin|date:"d/m/Y" }}</small>
-          </div>
+  {% if cours %}
+    <div class="card card-uom">
+      <div class="card-body">
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Titre</th>
+                <th>Type</th>
+                <th>Niveau</th>
+                <th>Filière</th>
+                <th>Période</th>
+                <th>Statut</th>
+                <th class="text-end">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in cours %}
+              <tr>
+                <td>
+                  <span class="badge bg-primary">{{ c.code }}</span>
+                </td>
+                <td>
+                  <strong>{{ c.titre }}</strong>
+                  {% if c.description %}
+                    <br><small class="text-muted">{{ c.description|truncatewords:15 }}</small>
+                  {% endif %}
+                </td>
+                <td>
+                  <span class="badge bg-info">{{ c.get_type_cours_display }}</span>
+                </td>
+                <td>
+                  <span class="badge bg-secondary">{{ c.get_niveau_display }}</span>
+                </td>
+                <td>
+                  <span class="text-muted">{{ c.filiere|truncatechars:20 }}</span>
+                </td>
+                <td>
+                  <small>{{ c.date_debut|date:"d/m/Y" }} - {{ c.date_fin|date:"d/m/Y" }}</small>
+                </td>
+                <td>
+                  {% if c.is_actif %}
+                    <span class="badge bg-success">Actif</span>
+                  {% else %}
+                    <span class="badge bg-danger">Inactif</span>
+                  {% endif %}
+                  {% if c.is_visible_etudiants %}
+                    <br><small class="text-success">Visible étudiants</small>
+                  {% else %}
+                    <br><small class="text-warning">Masqué</small>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  <a href="{% url 'cours:teacher_cours_detail' c.id %}" class="btn btn-uom-primary btn-sm">
+                    <i class="bi bi-eye"></i> Voir le cours
+                  </a>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
-    {% endfor %}
   {% else %}
-    <div class="col-12">
-      <p class="text-center text-uom-gray">Aucun cours pour l’instant.</p>
+    <div class="text-center">
+      <div class="card card-uom">
+        <div class="card-body">
+          <i class="bi bi-book" style="font-size: 3rem; color: var(--uom-gray);"></i>
+          <h4 class="mt-3" style="color: var(--uom-gray);">Aucun cours trouvé</h4>
+          <p class="text-muted">Vous n'avez pas encore de cours assignés.</p>
+          <a href="{% url 'cours:admin_cours_list' %}" class="btn btn-uom-primary">
+            <i class="bi bi-plus-circle"></i> Créer un Cours
+          </a>
+        </div>
+      </div>
     </div>
   {% endif %}
 </div>

@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulletin de Notes - {{ etudiant.get_full_name|default:etudiant.username }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .bulletin-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #1e3a8a;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 10px;
+        }
+        .university-name {
+            font-size: 18px;
+            color: #374151;
+            margin-bottom: 5px;
+        }
+        .document-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-top: 20px;
+        }
+        .student-info {
+            background-color: #f1f5f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 30px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .info-label {
+            font-weight: bold;
+            color: #374151;
+        }
+        .info-value {
+            color: #6b7280;
+        }
+        .grades-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        .grades-table th,
+        .grades-table td {
+            border: 1px solid #d1d5db;
+            padding: 12px;
+            text-align: left;
+        }
+        .grades-table th {
+            background-color: #1e3a8a;
+            color: white;
+            font-weight: bold;
+        }
+        .grades-table tr:nth-child(even) {
+            background-color: #f9fafb;
+        }
+        .grade-pass {
+            color: #059669;
+            font-weight: bold;
+        }
+        .grade-fail {
+            color: #dc2626;
+            font-weight: bold;
+        }
+        .summary {
+            background-color: #f1f5f9;
+            padding: 20px;
+            border-radius: 5px;
+            margin-top: 30px;
+        }
+        .summary-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 15px;
+        }
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #d1d5db;
+            color: #6b7280;
+            font-size: 12px;
+        }
+        .date-print {
+            text-align: right;
+            margin-bottom: 20px;
+            color: #6b7280;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="bulletin-container">
+        <!-- En-tête -->
+        <div class="header">
+            <div class="logo">UNIVERSITÉ DE MBUJIMAYI</div>
+            <div class="university-name">UOM</div>
+            <div class="document-title">BULLETIN DE NOTES</div>
+        </div>
+
+        <!-- Date d'impression -->
+        <div class="date-print">
+            Imprimé le {{ "now"|date:"d/m/Y à H:i" }}
+        </div>
+
+        <!-- Informations étudiant -->
+        <div class="student-info">
+            <div class="info-row">
+                <span class="info-label">Nom complet:</span>
+                <span class="info-value">{{ etudiant.get_full_name|default:etudiant.username }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Matricule:</span>
+                <span class="info-value">{{ etudiant.matricule|default:"N/A" }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Année académique:</span>
+                <span class="info-value">{{ bulletin.annee_academique }}</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Semestre:</span>
+                <span class="info-value">{{ bulletin.get_semestre_display }}</span>
+            </div>
+            {% if bulletin.moyenne_semestre %}
+            <div class="info-row">
+                <span class="info-label">Moyenne du semestre:</span>
+                <span class="info-value" style="font-weight: bold; color: {% if bulletin.moyenne_semestre >= 10 %}#059669{% else %}#dc2626{% endif %};">
+                    {{ bulletin.moyenne_semestre }}/20
+                </span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Tableau des notes -->
+        <table class="grades-table">
+            <thead>
+                <tr>
+                    <th>Code UE</th>
+                    <th>Nom de l'UE</th>
+                    <th>Type</th>
+                    <th>Note</th>
+                    <th>Coeff.</th>
+                    <th>Moyenne UE</th>
+                    <th>Statut</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ue_id, data in moyennes_ue.items %}
+                <tr>
+                    <td><strong>{{ data.ue.code }}</strong></td>
+                    <td>{{ data.ue.nom }}</td>
+                    <td>{{ data.ue.get_niveau_display }}</td>
+                    <td>
+                        {% for note in data.notes %}
+                            <div>{{ note.titre }}: {{ note.note_obtenue }}/{{ note.note_maximale }}</div>
+                        {% endfor %}
+                    </td>
+                    <td>{{ data.total_coefficients }}</td>
+                    <td class="{% if data.moyenne >= 10 %}grade-pass{% else %}grade-fail{% endif %}">
+                        {{ data.moyenne }}/20
+                    </td>
+                    <td>
+                        {% if data.moyenne >= 10 %}
+                            <span style="color: #059669; font-weight: bold;">VALIDÉ</span>
+                        {% else %}
+                            <span style="color: #dc2626; font-weight: bold;">NON VALIDÉ</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Résumé -->
+        <div class="summary">
+            <div class="summary-title">Résumé du Semestre</div>
+            {% if bulletin.moyenne_semestre %}
+            <div class="summary-row">
+                <span>Moyenne du semestre:</span>
+                <span style="font-weight: bold; color: {% if bulletin.moyenne_semestre >= 10 %}#059669{% else %}#dc2626{% endif %};">
+                    {{ bulletin.moyenne_semestre }}/20
+                </span>
+            </div>
+            {% endif %}
+            <div class="summary-row">
+                <span>Nombre d'UE:</span>
+                <span>{{ moyennes_ue|length }}</span>
+            </div>
+            <div class="summary-row">
+                <span>UE validées:</span>
+                <span style="color: #059669; font-weight: bold;">
+                    {% for ue_id, data in moyennes_ue.items %}
+                        {% if data.moyenne >= 10 %}{{ forloop.counter0|add:1 }}{% endif %}
+                    {% endfor %}/{{ moyennes_ue|length }}
+                </span>
+            </div>
+        </div>
+
+        <!-- Pied de page -->
+        <div class="footer">
+            <p>Ce bulletin a été généré automatiquement par le système MyUOM</p>
+            <p>Pour toute question, veuillez contacter l'administration</p>
+        </div>
+    </div>
+</body>
+</html>

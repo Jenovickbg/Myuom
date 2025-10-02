@@ -1,12 +1,7 @@
 {% extends 'users/base.html' %}
+{% load static %}
 
 {% block title %}Mes Travaux (Enseignant) - MyUOM{% endblock %}
-
-{% block navbar_links %}
-<li class="nav-item"><a class="nav-link" href="{% url 'teacher_dashboard' %}"><i class="bi bi-speedometer2"></i> Dashboard</a></li>
-<li class="nav-item"><a class="nav-link" href="{% url 'cours:teacher_courses' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-<li class="nav-item"><a class="nav-link active" href="{% url 'travaux:teacher_travaux_list' %}"><i class="bi bi-file-earmark-text"></i> Mes Travaux</a></li>
-{% endblock %}
 
 {% block content %}
 <div class="row mb-4">
@@ -16,7 +11,7 @@
       <p class="text-uom-gray mb-0">{{ total_travaux }} travaux • {{ remises_attente }} remises en attente</p>
     </div>
     <div>
-      <a class="btn btn-uom-primary" href="{% url 'travaux:teacher_travail_create' %}"><i class="bi bi-plus-circle"></i> Créer un travail</a>
+      <a class="btn btn-uom-primary" href="{% url 'travaux:teacher_cours_selection' %}"><i class="bi bi-plus-circle"></i> Créer un travail</a>
     </div>
   </div>
 </div>
