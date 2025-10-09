@@ -1,52 +1,672 @@
 {% extends 'users/base.html' %}
+{% load static %}
 
 {% block title %}Mes Résultats - MyUOM{% endblock %}
 
-{# Les liens de navigation sont déjà définis dans le template de base #}
+{% block extra_css %}
+<style>
+    .bulletin-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .bulletin-header {
+        background: linear-gradient(135deg, var(--uom-blue), #1a4c8a);
+        color: white;
+        padding: 2rem;
+        text-align: center;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .bulletin-header::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -20%;
+        width: 200px;
+        height: 200px;
+        background: rgba(255,255,255,0.1);
+        border-radius: 50%;
+        z-index: 1;
+    }
+    
+    .bulletin-content {
+        background: white;
+        padding: 2rem;
+    }
+    
+    .university-logo {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        margin: 0 auto 1rem;
+        display: block;
+    }
+    
+    .university-info {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .university-name {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin: 0.5rem 0;
+        text-transform: uppercase;
+    }
+    
+    .secretariat {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0.3rem 0;
+    }
+    
+    .faculty {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin: 0.3rem 0;
+    }
+    
+    .academic-year {
+        font-size: 1rem;
+        opacity: 0.8;
+        margin: 0.3rem 0 0;
+    }
+    
+    .student-info {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-radius: 8px;
+        margin: 2rem 0;
+        text-align: center;
+    }
+    
+    .student-name {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: var(--uom-blue);
+        margin-bottom: 0.5rem;
+    }
+    
+    .student-details {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+    
+    .student-detail {
+        text-align: center;
+    }
+    
+    .student-detail strong {
+        color: var(--uom-blue);
+        display: block;
+        margin-bottom: 0.2rem;
+    }
+    
+    .semester-section {
+        margin: 2rem 0;
+    }
+    
+    .semester-title {
+        background: #6c757d;
+        color: white;
+        padding: 0.8rem 1rem;
+        text-align: center;
+        font-weight: bold;
+        font-size: 1.1rem;
+        margin: 0 0 1rem 0;
+        border-radius: 5px;
+    }
+    
+    .results-table {
+        border-collapse: collapse;
+        width: 100%;
+        font-size: 0.9rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .results-table th {
+        background-color: var(--uom-blue);
+        color: white;
+        padding: 12px 8px;
+        text-align: center;
+        font-weight: 600;
+        border: 1px solid #ddd;
+    }
+    
+    .results-table td {
+        padding: 12px 8px;
+        border: 1px solid #ddd;
+        text-align: center;
+        vertical-align: middle;
+    }
+    
+    .results-table tbody tr:nth-child(even) {
+        background-color: #f8f9fa;
+    }
+    
+    .results-table tbody tr:nth-child(odd) {
+        background-color: white;
+    }
+    
+    .results-table tbody tr:hover {
+        background-color: #e3f2fd;
+    }
+    
+    .ue-code {
+        font-weight: 600;
+        color: var(--uom-blue);
+    }
+    
+    .ue-title {
+        text-align: left;
+        font-weight: 500;
+    }
+    
+    .note-cell {
+        background-color: #e3f2fd;
+        font-weight: 600;
+        color: var(--uom-blue);
+    }
+    
+    .decision-valide {
+        background-color: #d4edda;
+        color: #155724;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    
+    .decision-ajourne {
+        background-color: #f8d7da;
+        color: #721c24;
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 4px;
+    }
+    
+    .semester-summary {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+    
+    .summary-title {
+        background: #6c757d;
+        color: white;
+        padding: 0.6rem 1rem;
+        text-align: center;
+        font-weight: bold;
+        margin: -1rem -1rem 1rem -1rem;
+        border-radius: 8px 8px 0 0;
+    }
+    
+    .summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    
+    .summary-table th,
+    .summary-table td {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        text-align: center;
+    }
+    
+    .summary-table th {
+        background-color: #e9ecef;
+        font-weight: 600;
+    }
+    
+    .summary-table td {
+        background-color: white;
+        font-weight: 500;
+    }
+    
+    .stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 2rem 0;
+        flex-wrap: wrap;
+    }
+    
+    .stats-card {
+        background: white;
+        border: 2px solid var(--uom-blue);
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        min-width: 120px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: var(--uom-blue);
+        display: block;
+    }
+    
+    .stats-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+    }
+    
+    .download-btn {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        border: none;
+        padding: 12px 24px;
+        border-radius: 25px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        margin-left: 10px;
+    }
+    
+    .download-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        color: white;
+    }
+    
+    .retour-btn {
+        background: linear-gradient(135deg, #dc3545, #c82333);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 20px;
+        color: white;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .retour-btn:hover {
+        transform: translateY(-2px);
+        color: white;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 768px) {
+        .bulletin-container {
+            margin: 0 1rem;
+        }
+        
+        .bulletin-header {
+            padding: 1.5rem 1rem;
+        }
+        
+        .bulletin-content {
+            padding: 1rem;
+        }
+        
+        .university-logo {
+            width: 60px;
+            height: 60px;
+        }
+        
+        .university-name {
+            font-size: 1.4rem;
+        }
+        
+        .secretariat {
+            font-size: 1rem;
+        }
+        
+        .student-details {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .results-table {
+            font-size: 0.8rem;
+        }
+        
+        .results-table th,
+        .results-table td {
+            padding: 8px 4px;
+        }
+        
+        .download-btn, .retour-btn {
+            padding: 8px 16px;
+            font-size: 0.9rem;
+            margin: 0.25rem;
+        }
+        
+        .stats-row {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .stats-card {
+            min-width: 100px;
+            padding: 1rem;
+        }
+        
+        .stats-number {
+            font-size: 1.5rem;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .bulletin-container {
+            margin: 0 0.5rem;
+        }
+        
+        .bulletin-header {
+            padding: 1rem 0.5rem;
+        }
+        
+        .bulletin-content {
+            padding: 0.5rem;
+        }
+        
+        .university-name {
+            font-size: 1.2rem;
+        }
+        
+        .secretariat, .faculty, .academic-year {
+            font-size: 0.9rem;
+        }
+        
+        .student-info {
+            padding: 1rem;
+        }
+        
+        .results-table {
+            font-size: 0.7rem;
+        }
+        
+        .results-table th,
+        .results-table td {
+            padding: 6px 2px;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="row mb-4">
-  <div class="col-12 d-flex align-items-center justify-content-between">
-    <div>
-      <h3 style="color: var(--uom-blue);"><i class="bi bi-graph-up"></i> Mes Résultats</h3>
-      <p class="text-uom-gray mb-0">Notes par Unité d'Enseignement (UE)</p>
+<div class="container mt-4">
+    <!-- Boutons d'action -->
+    <div class="action-buttons">
+        <button class="retour-btn" onclick="history.back()">
+            <i class="bi bi-arrow-left"></i> RETOUR
+        </button>
+        <button class="download-btn" onclick="downloadPDF()">
+            <i class="bi bi-download"></i> Télécharger en PDF
+        </button>
     </div>
-  </div>
+
+    <!-- Container principal centré -->
+    <div class="bulletin-container">
+        <!-- En-tête du bulletin -->
+        <div class="bulletin-header">
+            <div class="university-info">
+                <img src="{% static 'images/logo-UOM.jpg' %}" alt="Logo UOM" class="university-logo">
+                <h1 class="university-name">UNIVERSITÉ DE MBUJIMAYI</h1>
+                <p class="secretariat">SÉCRÉTARIAT GÉNÉRAL ACADÉMIQUE</p>
+                {% if user.is_student_user and user.student_profile.faculte %}
+                    <p class="faculty">FACULTÉ: {{ user.student_profile.faculte.nom|upper }}</p>
+                {% endif %}
+                {% if user.is_student_user and user.student_profile.promotion %}
+                    <p class="academic-year">{{ user.student_profile.get_niveau_display|upper }}, ANNÉE ACADÉMIQUE {{ user.student_profile.promotion.nom_complet }}</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Contenu du bulletin -->
+        <div class="bulletin-content">
+            <!-- Informations étudiant -->
+            <div class="student-info">
+                <div class="student-name">Étudiant: {{ user.get_full_name|upper }} ({{ user.matricule }})</div>
+                <div class="student-details">
+                    {% if user.is_student_user and user.student_profile.promotion %}
+                        <div class="student-detail">
+                            <strong>Promotion</strong>
+                            {{ user.student_profile.promotion.nom_complet }}
+                        </div>
+                    {% endif %}
+                    {% if user.is_student_user and user.student_profile.niveau %}
+                        <div class="student-detail">
+                            <strong>Niveau</strong>
+                            {{ user.student_profile.get_niveau_display }}
+                        </div>
+                    {% endif %}
+                    <div class="student-detail">
+                        <strong>Date d'émission</strong>
+                        {% now "d/m/Y" %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistiques -->
+            <div class="stats-row">
+                <div class="stats-card">
+                    <span class="stats-number">{{ total_ues|default:0 }}</span>
+                    <div class="stats-label">UE Total</div>
+                </div>
+                <div class="stats-card">
+                    <span class="stats-number">{{ total_credits|default:0 }}</span>
+                    <div class="stats-label">Crédits</div>
+                </div>
+                <div class="stats-card">
+                    <span class="stats-number">{{ moyenne_generale|default:"-" }}</span>
+                    <div class="stats-label">Moyenne</div>
+                </div>
+                <div class="stats-card">
+                    <span class="stats-number">{{ ues_validees|default:0 }}</span>
+                    <div class="stats-label">UE Validées</div>
+                </div>
+            </div>
+
+            {% if ue_to_notes %}
+                <!-- Premier Semestre -->
+                <div class="semester-section">
+                    <div class="semester-title">PREMIER SEMESTRE</div>
+                    
+                    <!-- Tableau des résultats -->
+                    <div class="table-responsive">
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 15%;">Code UE</th>
+                                    <th style="width: 35%;">Intitulés UE/EC</th>
+                                    <th style="width: 10%;">Crédits</th>
+                                    <th style="width: 10%;">Note</th>
+                                    <th style="width: 15%;">Décision</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ue, notes in ue_to_notes.items %}
+                                    <tr>
+                                        <td class="ue-code">{{ ue.code }}</td>
+                                        <td class="ue-title">{{ ue.nom }}</td>
+                                        <td>{{ ue.credits }}</td>
+                                        <td class="note-cell">
+                                            {% for note in notes %}
+                                                {% if forloop.last %}
+                                                    {{ note.note_obtenue|floatformat:1 }}
+                                                {% endif %}
+                                            {% empty %}
+                                                -
+                                            {% endfor %}
+                                        </td>
+                                        <td>
+                                            {% for note in notes %}
+                                                {% if forloop.last %}
+                                                    {% if note.note_obtenue >= 10 %}
+                                                        <span class="decision-valide">VAL</span>
+                                                    {% else %}
+                                                        <span class="decision-ajourne">AJ</span>
+                                                    {% endif %}
+                                                {% endif %}
+                                            {% empty %}
+                                                <span class="decision-ajourne">-</span>
+                                            {% endfor %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Résumé du semestre -->
+                    <div class="semester-summary">
+                        <div class="summary-title">RÉSULTATS DU PREMIER SEMESTRE</div>
+                        <table class="summary-table">
+                            <thead>
+                                <tr>
+                                    <th>Total crédit obtenus / 30</th>
+                                    <th>Moyenne S1 / 20</th>
+                                    <th>Mention</th>
+                                    <th>Nombre des ecs à reprendre</th>
+                                    <th>Décision</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>{{ total_credits|default:0 }}</td>
+                                    <td>{{ moyenne_generale|default:"-" }}</td>
+                                    <td>
+                                        {% if mention %}
+                                            {{ mention }}
+                                        {% elif moyenne_generale >= 16 %}
+                                            Très Bien
+                                        {% elif moyenne_generale >= 14 %}
+                                            Bien
+                                        {% elif moyenne_generale >= 12 %}
+                                            Assez Bien
+                                        {% elif moyenne_generale >= 10 %}
+                                            Passable
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ cote_etudiant.nombre_ue_a_reprendre|default:total_ues|add:"-"|add:ues_validees|default:0 }}</td>
+                                    <td>
+                                        {% if decision %}
+                                            {% if decision == 'Admis' %}
+                                                <span class="decision-valide">{{ decision|upper }}</span>
+                                            {% else %}
+                                                <span class="decision-ajourne">{{ decision|upper }}</span>
+                                            {% endif %}
+                                        {% elif ues_validees == total_ues and ues_validees > 0 %}
+                                            <span class="decision-valide">ADMIS</span>
+                                        {% else %}
+                                            <span class="decision-ajourne">AJOURNÉ</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            <!-- Détail des notes par UE -->
+            <div class="mt-4">
+                <h5 class="mb-3" style="color: var(--uom-blue);">
+                    <i class="bi bi-list-ul"></i> Détail des Notes par UE
+                </h5>
+                {% for ue, notes in ue_to_notes.items %}
+                    <div class="card mb-3">
+                        <div class="card-header bg-light">
+                            <h6 class="mb-0">
+                                <i class="bi bi-book"></i> {{ ue.code }} - {{ ue.nom }}
+                                <span class="badge bg-primary ms-2">{{ ue.get_semestre_display }}</span>
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Type</th>
+                                            <th>Titre</th>
+                                            <th>Note</th>
+                                            <th>Coefficient</th>
+                                            <th>Date</th>
+                                            <th>Enseignant</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for note in notes %}
+                                            <tr>
+                                                <td>{{ note.get_type_note_display }}</td>
+                                                <td>{{ note.titre }}</td>
+                                                <td><strong>{{ note.note_obtenue }}</strong> / {{ note.note_maximale }}</td>
+                                                <td>{{ note.coefficient }}</td>
+                                                <td>{{ note.date_evaluation|date:"d/m/Y" }}</td>
+                                                <td>{{ note.enseignant.get_full_name|default:note.enseignant.username }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-graph-down" style="font-size: 4rem; color: var(--uom-gray);"></i>
+                    <h4 class="mt-3" style="color: var(--uom-gray);">Aucun résultat disponible</h4>
+                    <p class="text-muted">Vos résultats seront disponibles dès leur publication par les enseignants.</p>
+                </div>
+            {% endif %}
+
+            <!-- Résumé des bulletins -->
+            {% if bulletins %}
+                <div class="mt-5">
+                    <h4 class="mb-3" style="color: var(--uom-blue);">
+                        <i class="bi bi-file-earmark-medical"></i> Mes Bulletins Publiés
+                    </h4>
+                    <div class="list-group">
+                        {% for bulletin in bulletins %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">Bulletin {{ bulletin.annee_academique }} - {{ bulletin.get_semestre_display }}</h6>
+                                    <small class="text-muted">
+                                        Publié le {{ bulletin.date_publication|date:"d/m/Y à H:i" }}
+                                        {% if bulletin.is_definitif %}
+                                            <span class="badge bg-success ms-2">Définitif</span>
+                                        {% endif %}
+                                    </small>
+                                </div>
+                                <div>
+                                    <a href="{% url 'resultats:student_bulletin_pdf' bulletin.id %}" class="btn btn-uom-primary btn-sm" target="_blank">
+                                        <i class="bi bi-download"></i> PDF
+                                    </a>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
-{% if ue_to_notes %}
-  {% for ue, notes in ue_to_notes.items %}
-  <div class="card card-uom mb-3">
-    <div class="card-header card-header-uom d-flex justify-content-between">
-      <span>{{ ue.code }} · {{ ue.nom }}</span>
-      <span class="badge badge-uom-primary">{{ ue.get_semestre_display }}</span>
-    </div>
-    <div class="card-body">
-      <div class="table-responsive">
-        <table class="table align-middle">
-          <thead>
-            <tr>
-              <th>Type</th><th>Titre</th><th>Note</th><th>Coefficient</th><th>Date</th><th>Enseignant</th>
-            </tr>
-          </thead>
-          <tbody>
-          {% for n in notes %}
-            <tr>
-              <td>{{ n.get_type_note_display }}</td>
-              <td>{{ n.titre }}</td>
-              <td><strong>{{ n.note_obtenue }}</strong> / {{ n.note_maximale }}</td>
-              <td>{{ n.coefficient }}</td>
-              <td>{{ n.date_evaluation|date:"d/m/Y" }}</td>
-              <td>{{ n.enseignant.get_full_name|default:n.enseignant.username }}</td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-  {% endfor %}
-{% else %}
-  <p class="text-center text-uom-gray">Aucune note disponible pour le moment.</p>
-{% endif %}
+<script>
+function downloadPDF() {
+    // Ouvrir la génération PDF dans un nouvel onglet
+    const url = "{% url 'student_resultats_pdf' %}";
+    window.open(url, '_blank');
+}
+</script>
 {% endblock %}

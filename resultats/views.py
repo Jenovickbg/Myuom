@@ -8,8 +8,9 @@ from django.db.models import Q, Avg, Sum
 from django.conf import settings
 import os
 
-from .models import UE, Note, InscriptionUE, Bulletin, ConfigurationResultats
+from .models import UE, Note, InscriptionUE, Bulletin, ConfigurationResultats, CoteEtudiant
 from users.models import CustomUser
+from .utils import calculer_cote_etudiant, recalculer_toutes_cotes
 
 
 @login_required
@@ -179,3 +180,94 @@ def admin_notes_list(request):
     }
     
     return render(request, 'resultats/admin_notes_list.html', context)
+
+
+@login_required
+def admin_cotes_list(request):
+    """Liste et gestion des cotes étudiants"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    # Filtres
+    search_query = request.GET.get('search', '')
+    annee_filter = request.GET.get('annee', '2024-2025')
+    semestre_filter = request.GET.get('semestre', 'S1')
+    
+    cotes = CoteEtudiant.objects.select_related('etudiant').order_by('-annee_academique', '-semestre', 'etudiant__matricule')
+    
+    # Filtrage
+    if search_query:
+        cotes = cotes.filter(
+            Q(etudiant__matricule__icontains=search_query) |
+            Q(etudiant__first_name__icontains=search_query) |
+            Q(etudiant__last_name__icontains=search_query)
+        )
+    
+    if annee_filter:
+        cotes = cotes.filter(annee_academique=annee_filter)
+    
+    if semestre_filter:
+        cotes = cotes.filter(semestre=semestre_filter)
+    
+    context = {
+        'cotes': cotes,
+        'search_query': search_query,
+        'annee_filter': annee_filter,
+        'semestre_filter': semestre_filter,
+    }
+    
+    return render(request, 'resultats/admin_cotes_list.html', context)
+
+
+@login_required
+def admin_generer_cote(request, etudiant_id):
+    """Générer/recalculer la cote pour un étudiant"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    etudiant = get_object_or_404(CustomUser, id=etudiant_id, user_type='etudiant')
+    
+    if request.method == 'POST':
+        annee_academique = request.POST.get('annee_academique', '2024-2025')
+        semestre = request.POST.get('semestre', 'S1')
+        
+        try:
+            cote = calculer_cote_etudiant(etudiant, annee_academique, semestre)
+            if cote:
+                messages.success(request, f"Cote générée avec succès pour {etudiant.get_full_name()}.")
+            else:
+                messages.warning(request, f"Impossible de générer la cote pour {etudiant.get_full_name()}. Vérifiez les données de l'étudiant.")
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la génération de la cote: {str(e)}")
+        
+        return redirect('resultats:admin_cotes_list')
+    
+    return redirect('resultats:admin_cotes_list')
+
+
+@login_required
+def admin_recalculer_toutes_cotes(request):
+    """Recalculer toutes les cotes pour une année et un semestre"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    if request.method == 'POST':
+        annee_academique = request.POST.get('annee_academique', '2024-2025')
+        semestre = request.POST.get('semestre', 'S1')
+        
+        try:
+            resultats = recalculer_toutes_cotes(annee_academique, semestre)
+            messages.success(request, f"Cotes recalculées: {resultats['success']}/{resultats['total']} étudiants.")
+            
+            if resultats['errors']:
+                for error in resultats['errors'][:5]:  # Afficher max 5 erreurs
+                    messages.warning(request, f"Erreur pour {error['etudiant']}: {error['erreur']}")
+        except Exception as e:
+            messages.error(request, f"Erreur lors du recalcul: {str(e)}")
+        
+        return redirect('resultats:admin_cotes_list')
+    
+    return redirect('resultats:admin_cotes_list')

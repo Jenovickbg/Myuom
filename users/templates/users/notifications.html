@@ -1,0 +1,74 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Mes Notifications - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="mb-0" style="color: var(--uom-blue);">
+            <i class="bi bi-bell"></i> Mes Notifications
+        </h2>
+        <div>
+            {% if unread_count > 0 %}
+                <span class="badge bg-danger">{{ unread_count }} non lues</span>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if notifications %}
+        <div class="card card-uom">
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for notification in notifications %}
+                        <div class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div class="flex-grow-1">
+                                    <div class="d-flex align-items-center mb-2">
+                                        {% if notification.type == 'travail' %}
+                                            <i class="bi bi-file-earmark-text-fill text-primary me-2"></i>
+                                        {% elif notification.type == 'note' %}
+                                            <i class="bi bi-graph-up text-success me-2"></i>
+                                        {% elif notification.type == 'rappel' %}
+                                            <i class="bi bi-clock text-warning me-2"></i>
+                                        {% else %}
+                                            <i class="bi bi-info-circle text-info me-2"></i>
+                                        {% endif %}
+                                        <h6 class="mb-0 {% if not notification.is_read %}fw-bold{% endif %}">
+                                            {{ notification.title }}
+                                            {% if not notification.is_read %}
+                                                <span class="badge bg-primary ms-2">Nouveau</span>
+                                            {% endif %}
+                                        </h6>
+                                    </div>
+                                    <p class="mb-1 text-muted">{{ notification.message }}</p>
+                                    <small class="text-muted">
+                                        <i class="bi bi-clock"></i> {{ notification.date }}
+                                    </small>
+                                </div>
+                                <div class="ms-3">
+                                    {% if not notification.is_read %}
+                                        <button class="btn btn-sm btn-outline-primary" title="Marquer comme lu">
+                                            <i class="bi bi-check"></i>
+                                        </button>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="text-center">
+            <div class="card card-uom">
+                <div class="card-body">
+                    <i class="bi bi-bell-slash" style="font-size: 3rem; color: var(--uom-gray);"></i>
+                    <p class="lead mt-3">Aucune notification pour le moment.</p>
+                    <p class="text-muted">Vous recevrez des notifications pour les nouveaux cours, notes et rappels.</p>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

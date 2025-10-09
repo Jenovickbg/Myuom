@@ -118,6 +118,98 @@ class Bulletin(models.Model):
     def __str__(self):
         return f"{self.etudiant.matricule} - {self.annee_academique} - {self.get_semestre_display()}"
 
+class CoteEtudiant(models.Model):
+    """Cote/Appréciation de l'étudiant par semestre"""
+    MENTION_CHOICES = [
+        ('excellent', 'Excellent'),
+        ('tres_bien', 'Très Bien'),
+        ('bien', 'Bien'),
+        ('assez_bien', 'Assez Bien'),
+        ('passable', 'Passable'),
+        ('mediocre', 'Médiocre'),
+        ('faible', 'Faible'),
+        ('tres_faible', 'Très Faible'),
+    ]
+    
+    DECISION_CHOICES = [
+        ('admis', 'Admis'),
+        ('ajourne', 'Ajourné'),
+        ('repechage', 'Repêchage'),
+        ('exclus', 'Exclus'),
+    ]
+    
+    etudiant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='cotes', limit_choices_to={'user_type': 'etudiant'})
+    annee_academique = models.CharField(max_length=9, help_text="Année académique (ex: 2024-2025)")
+    semestre = models.CharField(max_length=5, choices=[
+        ('S1', 'Semestre 1'), ('S2', 'Semestre 2'), ('S3', 'Semestre 3'), ('S4', 'Semestre 4'),
+        ('S5', 'Semestre 5'), ('S6', 'Semestre 6'), ('S7', 'Semestre 7'), ('S8', 'Semestre 8'),
+        ('S9', 'Semestre 9'), ('S10', 'Semestre 10'),
+    ])
+    moyenne = models.DecimalField(max_digits=5, decimal_places=2, help_text="Moyenne du semestre")
+    total_credits = models.PositiveIntegerField(default=0, help_text="Total crédits obtenus")
+    total_credits_possible = models.PositiveIntegerField(default=30, help_text="Total crédits possibles")
+    mention = models.CharField(max_length=20, choices=MENTION_CHOICES, help_text="Mention obtenue")
+    decision = models.CharField(max_length=20, choices=DECISION_CHOICES, default='ajourne', help_text="Décision du jury")
+    nombre_ue_a_reprendre = models.PositiveIntegerField(default=0, help_text="Nombre d'UE à reprendre")
+    observation = models.TextField(blank=True, help_text="Observation du jury")
+    date_creation = models.DateTimeField(auto_now_add=True)
+    date_modification = models.DateTimeField(auto_now=True)
+    cree_par = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='cotes_creees')
+    is_definitif = models.BooleanField(default=False, help_text="Cote définitive")
+
+    class Meta:
+        verbose_name = "Cote Étudiant"
+        verbose_name_plural = "Cotes Étudiants"
+        unique_together = ['etudiant', 'annee_academique', 'semestre']
+        ordering = ['-annee_academique', '-semestre']
+    
+    def __str__(self):
+        return f"{self.etudiant.matricule} - {self.annee_academique} - {self.get_semestre_display()} - {self.moyenne}"
+    
+    def get_mention_display_text(self):
+        """Retourne le texte de la mention"""
+        mentions_map = {
+            'excellent': 'Excellent',
+            'tres_bien': 'Très Bien',
+            'bien': 'Bien',
+            'assez_bien': 'Assez Bien',
+            'passable': 'Passable',
+            'mediocre': 'Médiocre',
+            'faible': 'Faible',
+            'tres_faible': 'Très Faible',
+        }
+        return mentions_map.get(self.mention, 'N/A')
+    
+    @staticmethod
+    def calculer_mention(moyenne):
+        """Calcule la mention selon la moyenne"""
+        if moyenne >= 18:
+            return 'excellent'
+        elif moyenne >= 16:
+            return 'tres_bien'
+        elif moyenne >= 14:
+            return 'bien'
+        elif moyenne >= 12:
+            return 'assez_bien'
+        elif moyenne >= 10:
+            return 'passable'
+        elif moyenne >= 8:
+            return 'mediocre'
+        elif moyenne >= 6:
+            return 'faible'
+        else:
+            return 'tres_faible'
+    
+    @staticmethod
+    def calculer_decision(moyenne, nombre_ue_a_reprendre):
+        """Calcule la décision selon la moyenne et le nombre d'UE à reprendre"""
+        if moyenne >= 10 and nombre_ue_a_reprendre == 0:
+            return 'admis'
+        elif moyenne >= 8 and nombre_ue_a_reprendre <= 2:
+            return 'repechage'
+        else:
+            return 'ajourne'
+
 class ConfigurationResultats(models.Model):
     """Configuration pour l'affichage des résultats"""
     nom = models.CharField(max_length=50, unique=True, default='resultats_actives')

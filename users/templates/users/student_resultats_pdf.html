@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bulletin de Notes - {{ user.matricule }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 10pt;
+            line-height: 1.4;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 1cm;
+            padding-bottom: 0.5cm;
+        }
+        
+        .logo {
+            width: 50px;
+            height: 50px;
+            margin: 0 auto 0.3cm;
+            display: block;
+        }
+        
+        .university-name {
+            font-size: 14pt;
+            font-weight: bold;
+            color: #104276;
+            margin: 0;
+            text-transform: uppercase;
+        }
+        
+        .secretariat {
+            font-size: 10pt;
+            color: #666;
+            margin: 0.2cm 0;
+        }
+        
+        .faculty {
+            font-size: 10pt;
+            color: #104276;
+            font-weight: bold;
+            margin: 0.2cm 0;
+        }
+        
+        .academic-year {
+            font-size: 10pt;
+            color: #333;
+            margin: 0;
+        }
+        
+        .student-info {
+            margin-bottom: 1cm;
+            text-align: left;
+        }
+        
+        .student-info p {
+            margin: 0.1cm 0;
+            font-weight: bold;
+        }
+        
+        .semester-title {
+            background-color: #6c757d;
+            color: white;
+            padding: 0.3cm 0.5cm;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11pt;
+            margin: 1cm 0 0.5cm 0;
+        }
+        
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 0.8cm;
+            font-size: 9pt;
+        }
+        
+        .results-table th {
+            background-color: #104276;
+            color: white;
+            padding: 0.2cm;
+            text-align: center;
+            font-weight: bold;
+            border: 1px solid #333;
+            font-size: 8pt;
+        }
+        
+        .results-table td {
+            padding: 0.15cm 0.1cm;
+            border: 1px solid #333;
+            text-align: center;
+            vertical-align: middle;
+            font-size: 8pt;
+        }
+        
+        .results-table tbody tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+        
+        .results-table tbody tr:nth-child(odd) {
+            background-color: white;
+        }
+        
+        .ue-code {
+            font-weight: bold;
+            color: #104276;
+        }
+        
+        .ue-title {
+            text-align: left;
+            font-weight: 500;
+        }
+        
+        .note-cell {
+            background-color: #e3f2fd;
+            font-weight: bold;
+            color: #104276;
+        }
+        
+        .decision-valide {
+            background-color: #d4edda;
+            color: #155724;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        
+        .decision-ajourne {
+            background-color: #f8d7da;
+            color: #721c24;
+            font-weight: bold;
+            padding: 1px 4px;
+            border-radius: 2px;
+        }
+        
+        .semester-title {
+            background-color: #28a745;
+            color: white;
+            padding: 0.5cm;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12pt;
+            margin: 1cm 0 0.5cm 0;
+            border-radius: 5px;
+        }
+        
+        .footer {
+            margin-top: 2cm;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+            border-top: 1px solid #ddd;
+            padding-top: 0.5cm;
+        }
+        
+        .stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 1cm 0;
+            text-align: center;
+        }
+        
+        .stat-item {
+            background-color: #f8f9fa;
+            padding: 0.5cm;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        .stat-number {
+            font-size: 16pt;
+            font-weight: bold;
+            color: #104276;
+        }
+        
+        .stat-label {
+            font-size: 9pt;
+            color: #666;
+        }
+        
+        .page-break {
+            page-break-before: always;
+        }
+        
+        .text-center { text-align: center; }
+        .text-left { text-align: left; }
+        .text-right { text-align: right; }
+        .font-bold { font-weight: bold; }
+        .font-italic { font-style: italic; }
+        
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="header">
+        <img src="{{ logo_path }}" alt="Logo UOM" class="logo">
+        <h1 class="university-name">Université de Mbujimayi</h1>
+        <p class="secretariat">Secrétariat Général Académique</p>
+        {% if user.is_student_user and user.student_profile.faculte %}
+            <p class="faculty">Faculté: {{ user.student_profile.faculte.nom|upper }}</p>
+        {% endif %}
+        {% if user.is_student_user and user.student_profile.promotion %}
+            <p class="academic-year">{{ user.student_profile.get_niveau_display|upper }}, Année Académique {{ user.student_profile.promotion.nom_complet }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Informations étudiant -->
+    <div class="student-info">
+        <p><strong>Étudiant:</strong> {{ user.get_full_name|upper }} ({{ user.matricule }})</p>
+    </div>
+
+    {% if ue_to_notes %}
+        <!-- Premier Semestre -->
+        <div class="semester-title">PREMIER SEMESTRE</div>
+
+        <!-- Tableau des résultats -->
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th style="width: 15%;">Code UE</th>
+                    <th style="width: 35%;">Intitulés UE/EC</th>
+                    <th style="width: 10%;">Crédits</th>
+                    <th style="width: 10%;">Note</th>
+                    <th style="width: 15%;">Décision</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ue, notes in ue_to_notes.items %}
+                    <tr>
+                        <td class="ue-code">{{ ue.code }}</td>
+                        <td class="ue-title">{{ ue.nom }}</td>
+                        <td>{{ ue.credits }}</td>
+                        <td class="note-cell">
+                            {% for note in notes %}
+                                {% if forloop.last %}
+                                    {{ note.note_obtenue|floatformat:1 }}
+                                {% endif %}
+                            {% empty %}
+                                -
+                            {% endfor %}
+                        </td>
+                        <td>
+                            {% for note in notes %}
+                                {% if forloop.last %}
+                                    {% if note.note_obtenue >= 10 %}
+                                        <span class="decision-valide">VAL</span>
+                                    {% else %}
+                                        <span class="decision-ajourne">AJ</span>
+                                    {% endif %}
+                                {% endif %}
+                            {% empty %}
+                                <span class="decision-ajourne">-</span>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        <!-- Résumé du semestre -->
+        <div class="semester-title">RÉSULTATS DU PREMIER SEMESTRE</div>
+        <table class="results-table">
+            <thead>
+                <tr>
+                    <th>Total crédit obtenus / 30</th>
+                    <th>Moyenne S1 / 20</th>
+                    <th>Mention</th>
+                    <th>Nombre des ecs à reprendre</th>
+                    <th>Décision</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>{{ total_credits|default:0 }}</td>
+                    <td>{{ moyenne_generale|default:"-" }}</td>
+                    <td>
+                        {% if mention %}
+                            {{ mention }}
+                        {% elif moyenne_generale >= 16 %}
+                            Très Bien
+                        {% elif moyenne_generale >= 14 %}
+                            Bien
+                        {% elif moyenne_generale >= 12 %}
+                            Assez Bien
+                        {% elif moyenne_generale >= 10 %}
+                            Passable
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ nombre_ue_a_reprendre|default:0 }}</td>
+                    <td>
+                        {% if decision %}
+                            {% if decision == 'Admis' %}
+                                <span class="decision-valide">{{ decision|upper }}</span>
+                            {% else %}
+                                <span class="decision-ajourne">{{ decision|upper }}</span>
+                            {% endif %}
+                        {% elif ues_validees == total_ues and ues_validees > 0 %}
+                            <span class="decision-valide">ADMIS</span>
+                        {% else %}
+                            <span class="decision-ajourne">AJOURNÉ</span>
+                        {% endif %}
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+    {% else %}
+        <div style="text-align: center; padding: 2cm; color: #666;">
+            <h3>Aucun résultat disponible</h3>
+            <p>Vos résultats seront disponibles dès leur publication par les enseignants.</p>
+        </div>
+    {% endif %}
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <p><strong>Université de Mbujimayi</strong> - Tous droits réservés</p>
+        <p>Bulletin généré automatiquement le {% now "d/m/Y à H:i" %} par MyUOM</p>
+        <p class="font-italic">Ce document a une valeur officielle et ne peut être reproduit sans autorisation</p>
+    </div>
+</body>
+</html>

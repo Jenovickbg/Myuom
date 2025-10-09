@@ -5,77 +5,105 @@
 
 {% block content %}
 <div class="container mt-4">
-  <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2 class="mb-0" style="color: var(--uom-blue);">Mes Cours</h2>
-    <div>
-      {% if niveau_etudiant %}
-        <span class="badge bg-primary">Niveau: {{ niveau_etudiant }}</span>
-      {% endif %}
-      {% if promotion %}
-        <span class="badge bg-info">Promotion: {{ promotion.annee_debut }}-{{ promotion.annee_fin }}</span>
-      {% endif %}
-      {% if faculte %}
-        <span class="badge bg-secondary">{{ faculte.nom }}</span>
-      {% endif %}
+  <!-- En-tête avec titre et informations -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card card-uom">
+        <div class="card-body">
+          <div class="d-flex align-items-center mb-3">
+            <div class="course-icon me-3">
+              <i class="bi bi-book" style="font-size: 1.5rem; color: var(--uom-blue);"></i>
+            </div>
+            <h2 class="mb-0" style="color: var(--uom-blue);">Mes cours</h2>
+          </div>
+          <p class="text-muted mb-0">
+            Cours attribués durant l'année académique 2024-2025 dans la promotion de 
+            {% if niveau_etudiant %}{{ niveau_etudiant }}{% else %}N/A{% endif %} - 
+            {% if faculte %}{{ faculte.nom }}{% else %}N/A{% endif %} - 
+            {% if promotion %}{{ promotion.nom_complet }}{% else %}N/A{% endif %}
+          </p>
+        </div>
+      </div>
     </div>
-  </div>
-  
-  <!-- Information sur le filtrage -->
-  <div class="alert alert-info mb-4">
-    <i class="bi bi-info-circle"></i>
-    <strong>Filtrage automatique :</strong> 
-    Seuls les cours correspondant à votre niveau ({{ niveau_etudiant|default:"N/A" }}), 
-    votre promotion ({{ promotion.annee_debut|default:"N/A" }}-{{ promotion.annee_fin|default:"N/A" }}) 
-    et votre faculté ({{ faculte.nom|default:"N/A" }}) sont affichés.
   </div>
 
   {% if cours %}
-    <div class="card card-uom">
-      <div class="card-body">
-        <div class="table-responsive">
-          <table class="table table-hover">
-            <thead>
-              <tr>
-                <th>Code</th>
-                <th>Titre</th>
-                <th>Enseignant</th>
-                <th>Type</th>
-                <th>Niveau</th>
-                <th>Période</th>
-                <th class="text-end">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for c in cours %}
-              <tr>
-                <td>
-                  <span class="badge bg-primary">{{ c.code }}</span>
-                </td>
-                <td>
-                  <strong>{{ c.titre }}</strong>
-                  {% if c.description %}
-                    <br><small class="text-muted">{{ c.description|truncatewords:15 }}</small>
-                  {% endif %}
-                </td>
-                <td>{{ c.enseignant.get_full_name|default:c.enseignant.username }}</td>
-                <td>
-                  <span class="badge bg-info">{{ c.get_type_cours_display }}</span>
-                </td>
-                <td>
-                  <span class="badge bg-secondary">{{ c.get_niveau_display }}</span>
-                </td>
-                <td>
-                  <small>{{ c.date_debut|date:"d/m/Y" }} - {{ c.date_fin|date:"d/m/Y" }}</small>
-                </td>
-                <td class="text-end">
-                  <a href="{% url 'student_cours_detail' c.id %}" class="btn btn-uom-primary btn-sm">
-                    <i class="bi bi-eye"></i> Voir le cours
-                  </a>
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
+    <!-- Section des cours -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card card-uom">
+          <div class="card-body">
+            <h4 class="text-center mb-4" style="color: var(--uom-blue); font-weight: bold;">
+              UE DU PREMIER SEMESTRE
+            </h4>
+            
+            <div class="table-responsive">
+              <table class="table table-hover course-table">
+                <thead>
+                  <tr>
+                    <th style="width: 60px;"></th>
+                    <th style="width: 120px;">Code UE</th>
+                    <th>Intitulés UE/EC</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for c in cours %}
+                  <tr class="course-row" data-course-id="{{ c.id }}">
+                    <!-- Icône d'expansion -->
+                    <td class="text-center">
+                      <button class="btn btn-link p-0 expand-btn" type="button" data-bs-toggle="collapse" data-bs-target="#course-{{ c.id }}" aria-expanded="false">
+                        <i class="bi bi-plus-circle-fill text-success" style="font-size: 1.2rem;"></i>
+                      </button>
+                    </td>
+                    
+                    <!-- Code UE avec statut -->
+                    <td>
+                      <div class="d-flex align-items-center">
+                        <span class="badge bg-primary me-2">{{ c.code }}</span>
+                        <i class="bi bi-check-circle-fill text-success" style="font-size: 1rem;"></i>
+                      </div>
+                    </td>
+                    
+                    <!-- Titre du cours (lien) -->
+                    <td>
+                      <a href="{% url 'student_cours_detail' c.id %}" class="course-title-link" style="color: #007bff; text-decoration: none;">
+                        <strong>{{ c.titre }}</strong>
+                      </a>
+                    </td>
+                  </tr>
+                  
+                  <!-- Ligne d'expansion avec infos détaillées -->
+                  <tr class="collapse course-details" id="course-{{ c.id }}" data-bs-parent=".course-table">
+                    <td></td>
+                    <td colspan="2">
+                      <div class="course-expanded-info p-2" style="background-color: #f8f9fa; border-left: 4px solid var(--uom-blue);">
+                        <div class="d-flex justify-content-between align-items-start">
+                          <div>
+                            <div class="mb-1">
+                              <strong>Enseignant :</strong> {{ c.enseignant.get_full_name|default:c.enseignant.username }}
+                            </div>
+                            <div class="text-muted small">
+                              Professeur
+                            </div>
+                          </div>
+                          <div class="text-end">
+                            {% if c.credits %}
+                              <button class="btn btn-primary btn-sm" style="border-radius: 20px;">
+                                {{ c.credits }} crédits
+                              </button>
+                            {% else %}
+                              <span class="text-muted small">Non défini</span>
+                            {% endif %}
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -97,4 +125,68 @@
     </div>
   {% endif %}
 </div>
+
+<style>
+.course-icon {
+  width: 40px;
+  height: 40px;
+  background-color: #e3f2fd;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.course-table tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+.expand-btn {
+  transition: transform 0.3s ease;
+}
+
+.expand-btn[aria-expanded="true"] i {
+  transform: rotate(45deg);
+}
+
+.course-title-link:hover {
+  color: var(--uom-blue) !important;
+  text-decoration: underline !important;
+}
+
+.course-expanded-info {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Gestion de l'animation des icônes d'expansion
+  const expandButtons = document.querySelectorAll('.expand-btn');
+  
+  expandButtons.forEach(button => {
+    button.addEventListener('click', function() {
+      const icon = this.querySelector('i');
+      const isExpanded = this.getAttribute('aria-expanded') === 'true';
+      
+      if (isExpanded) {
+        icon.style.transform = 'rotate(0deg)';
+      } else {
+        icon.style.transform = 'rotate(45deg)';
+      }
+    });
+  });
+});
+</script>
 {% endblock %}

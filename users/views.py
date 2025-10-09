@@ -660,7 +660,10 @@ def student_cours_detail(request, cours_id):
                     travaux_fermes.append((travail, None))
                     
     except Exception as e:
-        messages.info(request, "La section des travaux n'est pas encore disponible.")
+        # Debug: afficher l'erreur dans la console pour diagnostiquer
+        print(f"Erreur dans student_cours_detail - travaux: {str(e)}")
+        # Ne pas afficher le message d'erreur à l'utilisateur, juste continuer sans travaux
+        pass
     
     # Récupérer les supports de cours
     supports_cours = []
@@ -673,12 +676,49 @@ def student_cours_detail(request, cours_id):
     except Exception:
         pass
     
+    # Données simulées pour les séances (à remplacer par un vrai modèle plus tard)
+    seances = [
+        {
+            'titre': 'Introduction aux algorithmes avancés',
+            'date': '2024-10-15',
+            'heure_debut': '08:00',
+            'heure_fin': '10:00',
+            'type': 'CM',
+            'salle': 'Amphi A'
+        },
+        {
+            'titre': 'Complexité algorithmique',
+            'date': '2024-10-22',
+            'heure_debut': '08:00',
+            'heure_fin': '10:00',
+            'type': 'CM',
+            'salle': 'Amphi A'
+        },
+        {
+            'titre': 'TD - Exercices de base',
+            'date': '2024-10-25',
+            'heure_debut': '10:00',
+            'heure_fin': '12:00',
+            'type': 'TD',
+            'salle': 'Salle 205'
+        },
+        {
+            'titre': 'TP - Implémentation',
+            'date': '2024-10-29',
+            'heure_debut': '14:00',
+            'heure_fin': '17:00',
+            'type': 'TP',
+            'salle': 'Labo Info 1'
+        }
+    ]
+    
     context = {
         'cours': cours,
         'travaux_ouverts': travaux_ouverts,
         'travaux_fermes': travaux_fermes,
         'travaux_termines': travaux_termines,
         'supports_cours': supports_cours,
+        'seances': seances,
     }
     
     return render(request, 'users/student_cours_detail.html', context)
@@ -786,7 +826,7 @@ def student_resultats(request):
         return render(request, 'resultats/student_resultats_disabled.html')
 
     try:
-        from resultats.models import Note, UE
+        from resultats.models import Note, UE, CoteEtudiant
 
         notes = (
             Note.objects
@@ -799,11 +839,224 @@ def student_resultats(request):
         ue_to_notes = {}
         for n in notes:
             ue_to_notes.setdefault(n.ue, []).append(n)
+            
+        # Récupérer la cote de l'étudiant depuis la base de données
+        cote_etudiant = None
+        try:
+            # Récupérer la cote du semestre actuel (ici S1 2024-2025 par défaut)
+            # Vous pouvez adapter pour récupérer le semestre actuel dynamiquement
+            cote_etudiant = CoteEtudiant.objects.filter(
+                etudiant=request.user,
+                annee_academique='2024-2025',
+                semestre='S1'
+            ).first()
+        except:
+            pass
+        
+        # Si une cote existe en BDD, utiliser ses valeurs
+        if cote_etudiant:
+            total_ues = len(ue_to_notes)
+            total_credits = cote_etudiant.total_credits
+            ues_validees = total_ues - cote_etudiant.nombre_ue_a_reprendre
+            moyenne_generale = float(cote_etudiant.moyenne)
+            mention = cote_etudiant.get_mention_display_text()
+            decision = cote_etudiant.get_decision_display()
+        else:
+            # Sinon, calculer les statistiques comme avant
+            total_ues = len(ue_to_notes)
+            total_credits = sum(ue.credits for ue in ue_to_notes.keys())
+            ues_validees = 0
+            total_notes = 0
+            somme_notes = 0
+            
+            for ue, notes_list in ue_to_notes.items():
+                if notes_list:
+                    derniere_note = notes_list[0]  # La plus récente
+                    if derniere_note.note_obtenue >= 10:
+                        ues_validees += 1
+                    total_notes += 1
+                    somme_notes += derniere_note.note_obtenue
+                    
+            moyenne_generale = (somme_notes / total_notes) if total_notes > 0 else 0
+            mention = None
+            decision = None
+        
     except:
         ue_to_notes = {}
+        total_ues = 0
+        total_credits = 0
+        ues_validees = 0
+        moyenne_generale = 0
+        mention = None
+        decision = None
+        cote_etudiant = None
 
     return render(request, 'users/student_resultats.html', {
         'ue_to_notes': ue_to_notes,
+        'total_ues': total_ues,
+        'total_credits': total_credits,
+        'ues_validees': ues_validees,
+        'moyenne_generale': round(moyenne_generale, 2),
+        'mention': mention,
+        'decision': decision,
+        'cote_etudiant': cote_etudiant,
+    })
+
+
+@login_required
+def student_resultats_pdf(request):
+    """Génération du PDF des résultats de l'étudiant"""
+    if not request.user.is_student_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+
+    # Vérifier si les résultats sont activés
+    try:
+        from resultats.models import ConfigurationResultats
+        if not ConfigurationResultats.get_resultats_actives():
+            messages.error(request, "La consultation des résultats est actuellement désactivée.")
+            return redirect('student_resultats')
+    except:
+        messages.error(request, "La consultation des résultats est actuellement désactivée.")
+        return redirect('student_resultats')
+
+    try:
+        from resultats.models import Note, UE, CoteEtudiant
+        from django.template.loader import render_to_string
+        from django.http import HttpResponse
+        from django.conf import settings
+        from django.utils import timezone
+        import os
+        from xhtml2pdf import pisa
+
+        notes = (
+            Note.objects
+            .filter(etudiant=request.user, is_publie=True)
+            .select_related('ue', 'enseignant')
+            .order_by('ue__code', '-date_publication')
+        )
+
+        # Agrégation simple par UE
+        ue_to_notes = {}
+        for n in notes:
+            ue_to_notes.setdefault(n.ue, []).append(n)
+            
+        # Récupérer la cote de l'étudiant depuis la base de données
+        cote_etudiant = None
+        try:
+            cote_etudiant = CoteEtudiant.objects.filter(
+                etudiant=request.user,
+                annee_academique='2024-2025',
+                semestre='S1'
+            ).first()
+        except:
+            pass
+        
+        # Si une cote existe en BDD, utiliser ses valeurs
+        if cote_etudiant:
+            total_ues = len(ue_to_notes)
+            total_credits = cote_etudiant.total_credits
+            ues_validees = total_ues - cote_etudiant.nombre_ue_a_reprendre
+            moyenne_generale = float(cote_etudiant.moyenne)
+            mention = cote_etudiant.get_mention_display_text()
+            decision = cote_etudiant.get_decision_display()
+            nombre_ue_a_reprendre = cote_etudiant.nombre_ue_a_reprendre
+        else:
+            # Sinon, calculer les statistiques comme avant
+            total_ues = len(ue_to_notes)
+            total_credits = sum(ue.credits for ue in ue_to_notes.keys())
+            ues_validees = 0
+            total_notes = 0
+            somme_notes = 0
+            
+            for ue, notes_list in ue_to_notes.items():
+                if notes_list:
+                    derniere_note = notes_list[0]  # La plus récente
+                    if derniere_note.note_obtenue >= 10:
+                        ues_validees += 1
+                    total_notes += 1
+                    somme_notes += derniere_note.note_obtenue
+                    
+            moyenne_generale = (somme_notes / total_notes) if total_notes > 0 else 0
+            mention = None
+            decision = None
+            nombre_ue_a_reprendre = total_ues - ues_validees
+        
+        # Chemin du logo
+        logo_path = os.path.join(settings.STATIC_ROOT, 'images', 'logo-UOM.jpg') if hasattr(settings, 'STATIC_ROOT') else None
+        
+        context = {
+            'user': request.user,
+            'ue_to_notes': ue_to_notes,
+            'total_ues': total_ues,
+            'total_credits': total_credits,
+            'ues_validees': ues_validees,
+            'moyenne_generale': round(moyenne_generale, 2),
+            'mention': mention,
+            'decision': decision,
+            'nombre_ue_a_reprendre': nombre_ue_a_reprendre,
+            'cote_etudiant': cote_etudiant,
+            'logo_path': logo_path,
+        }
+        
+        # Générer le HTML
+        html = render_to_string('users/student_resultats_pdf.html', context)
+        
+        # Générer le PDF avec xhtml2pdf
+        response = HttpResponse(content_type='application/pdf')
+        filename = f"bulletin_{request.user.matricule}_{timezone.now().strftime('%Y%m%d')}.pdf"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        # Convertir HTML en PDF
+        pisa_status = pisa.CreatePDF(html, dest=response)
+        
+        if pisa_status.err:
+            raise Exception("Erreur lors de la génération du PDF")
+        
+        return response
+        
+    except Exception as e:
+        messages.error(request, f"Erreur lors de la génération du bulletin: {str(e)}")
+        return redirect('student_resultats')
+
+
+@login_required
+def notifications(request):
+    """Page des notifications"""
+    if not request.user.is_authenticated:
+        return redirect('login')
+    
+    # Notifications simulées pour l'instant
+    notifications = [
+        {
+            'id': 1,
+            'title': 'Nouveau TP publié',
+            'message': 'Un nouveau travail pratique a été publié pour le cours "Programmation Web".',
+            'date': '2024-10-02 14:30',
+            'is_read': False,
+            'type': 'travail'
+        },
+        {
+            'id': 2,
+            'title': 'Note publiée',
+            'message': 'Votre note pour l\'examen de "Base de données" est maintenant disponible.',
+            'date': '2024-10-01 16:45',
+            'is_read': False,
+            'type': 'note'
+        },
+        {
+            'id': 3,
+            'title': 'Rappel de remise',
+            'message': 'N\'oubliez pas de rendre votre TP de "Systèmes d\'information" avant demain.',
+            'date': '2024-09-30 09:15',
+            'is_read': True,
+            'type': 'rappel'
+        }
+    ]
+    
+    return render(request, 'users/notifications.html', {
+        'notifications': notifications,
+        'unread_count': len([n for n in notifications if not n['is_read']])
     })
 
 

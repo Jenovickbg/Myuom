@@ -45,6 +45,16 @@ class Travail(models.Model):
         limit_choices_to={'user_type': 'enseignant'}
     )
     
+    # Cours associé
+    cours = models.ForeignKey(
+        'cours.Cours',
+        on_delete=models.CASCADE,
+        related_name='travaux',
+        help_text="Cours auquel ce travail appartient",
+        null=True,
+        blank=True
+    )
+    
     # Dates importantes
     date_creation = models.DateTimeField(auto_now_add=True)
     date_publication = models.DateTimeField(null=True, blank=True, help_text="Date de publication")

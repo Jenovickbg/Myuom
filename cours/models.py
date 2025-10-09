@@ -33,6 +33,7 @@ class Cours(models.Model):
     type_cours = models.CharField(max_length=20, choices=TYPE_COURS_CHOICES, default='cours')
     niveau = models.CharField(max_length=5, choices=NIVEAU_CHOICES)
     filiere = models.CharField(max_length=100, help_text="Filière concernée")
+    credits = models.PositiveIntegerField(default=3, help_text="Nombre de crédits ECTS")
     
     # Enseignant responsable
     enseignant = models.ForeignKey(

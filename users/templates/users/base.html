@@ -28,12 +28,17 @@
         .navbar-uom {
             background-color: var(--uom-blue);
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1030;
         }
         
         .navbar-uom .navbar-brand {
             color: var(--uom-white) !important;
             font-weight: bold;
-            font-size: 1.5rem;
+            font-size: 1.1rem;
+            padding-top: 0;
+            padding-bottom: 0;
         }
         
         .navbar-uom .nav-link {
@@ -97,6 +102,111 @@
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
         }
         
+        
+        .profile-picture {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.3);
+            flex-shrink: 0;
+        }
+        
+        .notification-badge {
+            position: absolute;
+            top: 0px;
+            right: 0px;
+            background-color: var(--uom-red);
+            color: white;
+            border-radius: 50%;
+            width: 18px;
+            height: 18px;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+        
+        .notification-icon {
+            position: relative;
+        }
+        
+        .notification-icon .bi-bell {
+            color: var(--uom-yellow) !important;
+        }
+        
+        /* Améliorations pour la responsivité du profil */
+        .profile-dropdown {
+            white-space: nowrap;
+        }
+        
+        .profile-dropdown .profile-picture {
+            flex-shrink: 0;
+        }
+        
+        .profile-name {
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        /* Effet modal pour le dropdown profil */
+        .profile-dropdown-menu {
+            position: fixed !important;
+            top: 70px !important;
+            right: 20px !important;
+            left: auto !important;
+            transform: none !important;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+            border: none !important;
+            border-radius: 12px !important;
+            padding: 0.5rem 0 !important;
+            min-width: 220px !important;
+            background: white !important;
+            z-index: 9999 !important;
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            pointer-events: none;
+        }
+        
+        .profile-dropdown-menu.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            pointer-events: auto;
+        }
+        
+        .profile-dropdown-menu::before {
+            content: '';
+            position: absolute;
+            top: -8px;
+            right: 20px;
+            width: 16px;
+            height: 16px;
+            background: white;
+            transform: rotate(45deg);
+            box-shadow: -2px -2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .profile-dropdown-menu .dropdown-item {
+            padding: 0.75rem 1rem !important;
+            border: none !important;
+            transition: all 0.2s ease;
+            font-weight: 500;
+        }
+        
+        .profile-dropdown-menu .dropdown-item:hover {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef) !important;
+            color: var(--uom-blue) !important;
+            transform: translateX(4px);
+        }
+        
+        .profile-dropdown-menu .dropdown-divider {
+            margin: 0.5rem 0 !important;
+            border-color: #e9ecef !important;
+        }
+
         /* Responsive improvements */
         @media (max-width: 768px) {
             .container-fluid {
@@ -125,6 +235,29 @@
                 font-size: 0.7rem;
                 padding: 0.25rem 0.5rem;
             }
+            
+            .top-navbar {
+                padding: 0.5rem 0.75rem;
+            }
+            
+            .top-navbar .navbar-brand {
+                font-size: 1rem;
+            }
+            
+            .profile-picture {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .top-navbar .nav-link {
+                width: 35px;
+                height: 35px;
+                padding: 0.25rem;
+            }
+            
+            .top-navbar .navbar-nav .nav-item {
+                margin-left: 0.5rem;
+            }
         }
         
         @media (max-width: 576px) {
@@ -139,6 +272,108 @@
             .btn-sm {
                 font-size: 0.8rem;
                 padding: 0.25rem 0.5rem;
+            }
+            
+            .top-navbar {
+                padding: 0.5rem;
+            }
+            
+            .profile-picture {
+                width: 28px;
+                height: 28px;
+            }
+            
+            .top-navbar .nav-link {
+                width: 32px;
+                height: 32px;
+                padding: 0.2rem;
+            }
+            
+            .top-navbar .navbar-nav .nav-item {
+                margin-left: 0.25rem;
+            }
+            
+            .notification-badge {
+                width: 16px;
+                height: 16px;
+                font-size: 0.6rem;
+                top: -3px;
+                right: -3px;
+            }
+            
+            .profile-picture {
+                margin-right: 0.25rem !important;
+            }
+        }
+        
+        /* Très petits écrans */
+        @media (max-width: 480px) {
+            .top-navbar {
+                padding: 0.25rem 0.5rem;
+            }
+            
+            .top-navbar .navbar-brand {
+                font-size: 0.9rem;
+            }
+            
+            .top-navbar .navbar-brand img {
+                height: 25px !important;
+            }
+            
+            .profile-picture {
+                width: 25px;
+                height: 25px;
+            }
+            
+            .top-navbar .nav-link {
+                width: 30px;
+                height: 30px;
+                padding: 0.15rem;
+            }
+            
+            .notification-badge {
+                width: 14px;
+                height: 14px;
+                font-size: 0.5rem;
+                top: -2px;
+                right: -2px;
+            }
+            
+            .dropdown-toggle::after {
+                display: none; /* Cacher la flèche sur très petits écrans */
+            }
+            
+            .profile-dropdown-menu {
+                top: 60px !important;
+                right: 10px !important;
+                left: 10px !important;
+                min-width: auto !important;
+            }
+        }
+        
+        /* Responsive pour le dropdown modal */
+        @media (max-width: 768px) {
+            .profile-dropdown-menu {
+                top: 65px !important;
+                right: 15px !important;
+                min-width: 180px !important;
+            }
+            
+            .profile-dropdown-menu::before {
+                right: 15px;
+            }
+        }
+        
+        @media (max-width: 576px) {
+            .profile-dropdown-menu {
+                top: 60px !important;
+                right: 10px !important;
+                min-width: 160px !important;
+            }
+            
+            .profile-dropdown-menu .dropdown-item {
+                padding: 0.6rem 0.8rem !important;
+                font-size: 0.9rem;
             }
         }
         
@@ -216,17 +451,69 @@
     {% load static %}
     
     {% if user.is_authenticated %}
-    <!-- Navbar -->
+    <!-- Navbar Unique Unifiée -->
     <nav class="navbar navbar-expand-lg navbar-uom">
         <div class="container-fluid">
             <a class="navbar-brand d-flex align-items-center" href="{% if user.is_admin_user or user.is_superuser %}{% url 'admin_dashboard' %}{% elif user.is_teacher %}{% url 'teacher_dashboard' %}{% else %}{% url 'student_dashboard' %}{% endif %}">
-                <img src="{% static 'images/logo-UOM.jpg' %}" alt="Logo UOM" height="40" class="me-2" style="border-radius: 5px;">
-                <span>MyUOM</span>
+                <img src="{% static 'images/logo-UOM.jpg' %}" alt="Logo UOM" height="32" class="me-2" style="border-radius: 5px;">
+                <span style="font-size: 1.1rem;">MyUOM</span>
             </a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            
+            <!-- Éléments toujours visibles (année, notifications, profil) -->
+            <div class="d-flex align-items-center ms-auto order-lg-2">
+                <!-- Dropdown Année académique (uniquement pour étudiants) -->
+                {% if user.is_student_user %}
+                <div class="dropdown me-2">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" style="color: var(--uom-yellow) !important; font-weight: 600;">
+                        <i class="bi bi-calendar3"></i> 2024-2025
+                    </a>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">2023-2024</a></li>
+                        <li><a class="dropdown-item active" href="#">2024-2025</a></li>
+                        <li><a class="dropdown-item" href="#">2025-2026</a></li>
+                    </ul>
+                </div>
+                {% endif %}
+
+                <!-- Icône Notifications -->
+                <div class="me-2">
+                    <a class="nav-link notification-icon position-relative" href="{% url 'notifications' %}" title="Notifications">
+                        <i class="bi bi-bell fs-5"></i>
+                        <span class="notification-badge">3</span>
+                    </a>
+                </div>
+
+                <!-- Photo de profil et nom -->
+                <div class="dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center profile-dropdown" href="#" role="button">
+                        {% if user.is_student_user and user.student_profile.photo %}
+                            <img src="{{ user.student_profile.photo.url }}" alt="Photo de profil" class="profile-picture me-2">
+                        {% elif user.is_teacher and user.teacher_profile.photo %}
+                            <img src="{{ user.teacher_profile.photo.url }}" alt="Photo de profil" class="profile-picture me-2">
+                        {% else %}
+                            <img src="{% static 'images/default-avatar.svg' %}" alt="Photo de profil" class="profile-picture me-2">
+                        {% endif %}
+                        <span class="d-none d-lg-inline profile-name">{{ user.get_full_name|default:user.username }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end profile-dropdown-menu">
+                        {% if user.is_student_user %}
+                            <li><a class="dropdown-item" href="{% url 'student_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
+                            <li><a class="dropdown-item" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Mes Résultats</a></li>
+                        {% elif user.is_teacher %}
+                            <li><a class="dropdown-item" href="{% url 'teacher_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
+                        {% elif user.is_admin_user %}
+                            <li><a class="dropdown-item" href="{% url 'admin_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <button class="navbar-toggler order-lg-1" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
-            <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="collapse navbar-collapse order-lg-1" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     {% if user.is_student_user %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-house"></i> Tableau de bord</a></li>
@@ -266,6 +553,7 @@
                                 <li><a class="dropdown-item" href="{% url 'resultats:admin_resultats_settings' %}"><i class="bi bi-gear"></i> Paramètres</a></li>
                                 <li><a class="dropdown-item" href="{% url 'resultats:admin_ue_list' %}"><i class="bi bi-book"></i> Unités d'Enseignement</a></li>
                                 <li><a class="dropdown-item" href="{% url 'resultats:admin_notes_list' %}"><i class="bi bi-list-check"></i> Notes</a></li>
+                                <li><a class="dropdown-item" href="{% url 'resultats:admin_cotes_list' %}"><i class="bi bi-trophy"></i> Cotes</a></li>
                             </ul>
                         </li>
                         <li class="nav-item dropdown">
@@ -279,18 +567,6 @@
                         </li>
                     {% endif %}
                     {% block navbar_links %}{% endblock %}
-                </ul>
-                <ul class="navbar-nav">
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                            <i class="bi bi-person-circle"></i> {{ user.get_full_name|default:user.username }}
-                        </a>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li><a class="dropdown-item" href="#"><i class="bi bi-person"></i> Mon profil</a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
-                        </ul>
-                    </li>
                 </ul>
             </div>
         </div>
@@ -317,7 +593,7 @@
     <!-- Footer -->
     <footer class="footer-uom text-center">
         <div class="container">
-            <p class="mb-0">&copy; 2025 Concu et développé par Numerika 360 </p>
+            <p class="mb-0">&copy;2025 Concu et développé par Numerika 360 </p>
             
         </div>
     </footer>
@@ -325,6 +601,68 @@
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
+    
+    <!-- Script pour l'effet modal du dropdown profil -->
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const profileDropdown = document.querySelector('.profile-dropdown');
+        const profileMenu = document.querySelector('.profile-dropdown-menu');
+        
+        if (profileDropdown && profileMenu) {
+            // Désactiver le dropdown Bootstrap par défaut
+            profileDropdown.setAttribute('data-bs-toggle', '');
+            
+            // Gérer l'ouverture/fermeture manuelle
+            profileDropdown.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                if (profileMenu.classList.contains('show')) {
+                    closeProfileMenu();
+                } else {
+                    openProfileMenu();
+                }
+            });
+            
+            // Fermer en cliquant ailleurs
+            document.addEventListener('click', function(e) {
+                if (!profileDropdown.contains(e.target) && !profileMenu.contains(e.target)) {
+                    closeProfileMenu();
+                }
+            });
+            
+            // Fermer en appuyant sur Escape
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeProfileMenu();
+                }
+            });
+            
+            function openProfileMenu() {
+                profileMenu.classList.add('show');
+                profileDropdown.setAttribute('aria-expanded', 'true');
+            }
+            
+            function closeProfileMenu() {
+                profileMenu.classList.remove('show');
+                profileDropdown.setAttribute('aria-expanded', 'false');
+            }
+        }
+    });
+    </script>
+
+    <style>
+    @keyframes profileMenuSlideIn {
+        from {
+            opacity: 0;
+            transform: translateY(-10px) scale(0.95);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+    </style>
 </body>
 </html>
 
