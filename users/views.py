@@ -6,7 +6,7 @@ from django.db.models import Q
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.http import JsonResponse
 import csv
-from .models import CustomUser, StudentProfile, TeacherProfile, Faculte, Promotion
+from .models import CustomUser, StudentProfile, TeacherProfile, Faculte, Promotion, FraisAcademique
 from .forms import (
     CustomLoginForm, PasswordChangeFirstLoginForm, ProfileCompletionForm,
     StudentCreationForm, TeacherCreationForm, BulkStudentImportForm,
@@ -235,6 +235,23 @@ def student_dashboard(request):
     # Notifications (pour l'instant vide, on l'implémentera plus tard)
     notifications = []
     
+    # Récupérer le niveau de l'étudiant
+    niveau = request.user.student_profile.niveau if hasattr(request.user, 'student_profile') else None
+    
+    # Récupérer les frais académiques de l'année en cours
+    from datetime import datetime
+    annee_actuelle = datetime.now().year
+    annee_academique = f"{annee_actuelle}-{annee_actuelle + 1}"
+    
+    frais_academique = None
+    try:
+        frais_academique = FraisAcademique.objects.filter(
+            etudiant=request.user,
+            annee_academique=annee_academique
+        ).first()
+    except:
+        pass
+    
     context = {
         'user': request.user,
         'mes_cours_count': mes_cours_count,
@@ -244,6 +261,8 @@ def student_dashboard(request):
         'mes_cours': mes_cours,
         'travaux_a_rendre': travaux_a_rendre,
         'notifications': notifications,
+        'niveau': niveau,
+        'frais_academique': frais_academique,
     }
     
     return render(request, 'users/student_dashboard.html', context)
@@ -271,11 +290,21 @@ def admin_dashboard(request):
     active_students = CustomUser.objects.filter(user_type='etudiant', is_active_student=True).count()
     pending_first_login = CustomUser.objects.filter(is_first_login=True).count()
     
+    # Statistiques facultés et promotions
+    total_facultes = Faculte.objects.count()
+    total_promotions = Promotion.objects.count()
+    active_facultes = Faculte.objects.filter(is_active=True).count()
+    active_promotions = Promotion.objects.filter(is_active=True).count()
+    
     context = {
         'total_students': total_students,
         'total_teachers': total_teachers,
         'active_students': active_students,
         'pending_first_login': pending_first_login,
+        'total_facultes': total_facultes,
+        'total_promotions': total_promotions,
+        'active_facultes': active_facultes,
+        'active_promotions': active_promotions,
     }
     return render(request, 'users/admin_dashboard.html', context)
 
@@ -487,6 +516,270 @@ def admin_student_bulk_import(request):
         form = BulkStudentImportForm()
     
     return render(request, 'users/admin_student_bulk_import.html', {'form': form})
+
+
+# ===== GESTION DES FACULTÉS =====
+
+@login_required
+def admin_faculte_management(request):
+    """Page de gestion des facultés et promotions avec modales"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    return render(request, 'users/admin_faculte_promotion_management.html')
+
+
+@login_required
+def admin_faculte_table(request):
+    """Retourne le tableau des facultés en HTML"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    
+    facultes = Faculte.objects.all()
+    
+    if search_query:
+        facultes = facultes.filter(
+            Q(code__icontains=search_query) | 
+            Q(nom__icontains=search_query)
+        )
+    
+    if status_filter:
+        if status_filter == 'active':
+            facultes = facultes.filter(is_active=True)
+        elif status_filter == 'inactive':
+            facultes = facultes.filter(is_active=False)
+    
+    context = {'facultes': facultes}
+    return render(request, 'users/admin_faculte_table.html', context)
+
+
+@login_required
+def admin_promotion_table(request):
+    """Retourne le tableau des promotions en HTML"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    search_query = request.GET.get('search', '')
+    status_filter = request.GET.get('status', '')
+    
+    promotions = Promotion.objects.all()
+    
+    if search_query:
+        promotions = promotions.filter(
+            Q(annee_debut__icontains=search_query) | 
+            Q(annee_fin__icontains=search_query)
+        )
+    
+    if status_filter:
+        if status_filter == 'active':
+            promotions = promotions.filter(is_active=True)
+        elif status_filter == 'inactive':
+            promotions = promotions.filter(is_active=False)
+    
+    context = {'promotions': promotions}
+    return render(request, 'users/admin_promotion_table.html', context)
+
+
+@login_required
+def admin_promotion_data(request, promotion_id):
+    """Retourne les données d'une promotion en JSON"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    promotion = get_object_or_404(Promotion, id=promotion_id)
+    return JsonResponse({
+        'id': promotion.id,
+        'annee_debut': promotion.annee_debut,
+        'annee_fin': promotion.annee_fin,
+        'is_active': promotion.is_active
+    })
+
+
+@login_required
+def admin_faculte_create(request):
+    """Créer une nouvelle faculté"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Accès non autorisé'}, status=403)
+    
+    if request.method == 'POST':
+        code = request.POST.get('code', '').strip().upper()
+        nom = request.POST.get('nom', '').strip()
+        description = request.POST.get('description', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not code or not nom:
+            return JsonResponse({'success': False, 'message': 'Le code et le nom sont obligatoires.'})
+        
+        try:
+            faculte = Faculte.objects.create(
+                code=code,
+                nom=nom,
+                description=description,
+                is_active=is_active
+            )
+            return JsonResponse({'success': True, 'message': f"Faculté '{faculte.nom}' créée avec succès."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Erreur lors de la création: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+
+@login_required
+def admin_faculte_edit(request, faculte_id):
+    """Modifier une faculté"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Accès non autorisé'}, status=403)
+    
+    faculte = get_object_or_404(Faculte, id=faculte_id)
+    
+    if request.method == 'POST':
+        faculte.code = request.POST.get('code', '').strip().upper()
+        faculte.nom = request.POST.get('nom', '').strip()
+        faculte.description = request.POST.get('description', '').strip()
+        faculte.is_active = request.POST.get('is_active') == 'on'
+        
+        if not faculte.code or not faculte.nom:
+            return JsonResponse({'success': False, 'message': 'Le code et le nom sont obligatoires.'})
+        
+        try:
+            faculte.save()
+            return JsonResponse({'success': True, 'message': f"Faculté '{faculte.nom}' modifiée avec succès."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Erreur lors de la modification: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+
+@login_required
+def admin_faculte_data(request, faculte_id):
+    """Retourne les données d'une faculté en JSON"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'error': 'Accès non autorisé'}, status=403)
+    
+    faculte = get_object_or_404(Faculte, id=faculte_id)
+    return JsonResponse({
+        'id': faculte.id,
+        'code': faculte.code,
+        'nom': faculte.nom,
+        'description': faculte.description,
+        'is_active': faculte.is_active
+    })
+
+
+@login_required
+def admin_faculte_delete(request, faculte_id):
+    """Supprimer une faculté"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Accès non autorisé'}, status=403)
+    
+    faculte = get_object_or_404(Faculte, id=faculte_id)
+    
+    if request.method == 'POST':
+        try:
+            nom = faculte.nom
+            faculte.delete()
+            return JsonResponse({'success': True, 'message': f"Faculté '{nom}' supprimée avec succès."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Erreur lors de la suppression: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+
+# ===== GESTION DES PROMOTIONS =====
+
+
+
+@login_required
+def admin_promotion_create(request):
+    """Créer une nouvelle promotion"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Accès non autorisé'}, status=403)
+    
+    if request.method == 'POST':
+        annee_debut = request.POST.get('annee_debut', '').strip()
+        annee_fin = request.POST.get('annee_fin', '').strip()
+        is_active = request.POST.get('is_active') == 'on'
+        
+        if not annee_debut or not annee_fin:
+            return JsonResponse({'success': False, 'message': "L'année de début et l'année de fin sont obligatoires."})
+        
+        try:
+            annee_debut = int(annee_debut)
+            annee_fin = int(annee_fin)
+            
+            if annee_debut >= annee_fin:
+                return JsonResponse({'success': False, 'message': "L'année de début doit être inférieure à l'année de fin."})
+            
+            promotion = Promotion.objects.create(
+                annee_debut=annee_debut,
+                annee_fin=annee_fin,
+                is_active=is_active
+            )
+            return JsonResponse({'success': True, 'message': f"Promotion '{promotion.nom_complet}' créée avec succès."})
+        except ValueError:
+            return JsonResponse({'success': False, 'message': "Les années doivent être des nombres valides."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Erreur lors de la création: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+
+@login_required
+def admin_promotion_edit(request, promotion_id):
+    """Modifier une promotion"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Accès non autorisé'}, status=403)
+    
+    promotion = get_object_or_404(Promotion, id=promotion_id)
+    
+    if request.method == 'POST':
+        annee_debut = request.POST.get('annee_debut', '').strip()
+        annee_fin = request.POST.get('annee_fin', '').strip()
+        promotion.is_active = request.POST.get('is_active') == 'on'
+        
+        if not annee_debut or not annee_fin:
+            return JsonResponse({'success': False, 'message': "L'année de début et l'année de fin sont obligatoires."})
+        
+        try:
+            annee_debut = int(annee_debut)
+            annee_fin = int(annee_fin)
+            
+            if annee_debut >= annee_fin:
+                return JsonResponse({'success': False, 'message': "L'année de début doit être inférieure à l'année de fin."})
+            
+            promotion.annee_debut = annee_debut
+            promotion.annee_fin = annee_fin
+            promotion.save()
+            return JsonResponse({'success': True, 'message': f"Promotion '{promotion.nom_complet}' modifiée avec succès."})
+        except ValueError:
+            return JsonResponse({'success': False, 'message': "Les années doivent être des nombres valides."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Erreur lors de la modification: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
+
+
+@login_required
+def admin_promotion_delete(request, promotion_id):
+    """Supprimer une promotion"""
+    if not request.user.is_admin_user() and not request.user.is_superuser:
+        return JsonResponse({'success': False, 'message': 'Accès non autorisé'}, status=403)
+    
+    promotion = get_object_or_404(Promotion, id=promotion_id)
+    
+    if request.method == 'POST':
+        try:
+            nom = promotion.nom_complet
+            promotion.delete()
+            return JsonResponse({'success': True, 'message': f"Promotion '{nom}' supprimée avec succès."})
+        except Exception as e:
+            return JsonResponse({'success': False, 'message': f"Erreur lors de la suppression: {str(e)}"})
+    
+    return JsonResponse({'success': False, 'message': 'Méthode non autorisée'})
 
 
 @login_required

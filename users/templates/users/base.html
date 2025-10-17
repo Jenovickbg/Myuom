@@ -500,9 +500,9 @@
                             <li><a class="dropdown-item" href="{% url 'student_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
                             <li><a class="dropdown-item" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Mes Résultats</a></li>
                         {% elif user.is_teacher %}
-                            <li><a class="dropdown-item" href="{% url 'teacher_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('Profil enseignant - En développement')"><i class="bi bi-person"></i> Mon Profil</a></li>
                         {% elif user.is_admin_user %}
-                            <li><a class="dropdown-item" href="{% url 'admin_profil' %}"><i class="bi bi-person"></i> Mon Profil</a></li>
+                            <li><a class="dropdown-item" href="#" onclick="alert('Profil admin - En développement')"><i class="bi bi-person"></i> Mon Profil</a></li>
                         {% endif %}
                         <li><hr class="dropdown-divider"></li>
                         <li><a class="dropdown-item" href="{% url 'logout' %}"><i class="bi bi-box-arrow-right"></i> Déconnexion</a></li>
@@ -518,7 +518,9 @@
                     {% if user.is_student_user %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'student_dashboard' %}"><i class="bi bi-house"></i> Tableau de bord</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'cours:student_cours_list' %}"><i class="bi bi-book"></i> Mes Cours</a></li>
-                        <li class="nav-item"><a class="nav-link" href="{% url 'student_travaux' %}"><i class="bi bi-file-earmark-text"></i> Travaux</a></li>
+                        {% if user.student_profile.niveau in 'L3 M2' %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'memoires:student_memoire_dashboard' %}"><i class="bi bi-journal-text"></i> Mémoire</a></li>
+                        {% endif %}
                         <li class="nav-item"><a class="nav-link" href="{% url 'student_resultats' %}"><i class="bi bi-graph-up"></i> Résultats</a></li>
                         <li class="nav-item"><a class="nav-link" href="{% url 'student_profil' %}"><i class="bi bi-person"></i> Profil</a></li>
                     {% elif user.is_teacher_user %}
@@ -556,13 +558,18 @@
                                 <li><a class="dropdown-item" href="{% url 'resultats:admin_cotes_list' %}"><i class="bi bi-trophy"></i> Cotes</a></li>
                             </ul>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'memoires:admin_memoires_list' %}">
+                                <i class="bi bi-journal-text"></i> Mémoires
+                            </a>
+                        </li>
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
                                 <i class="bi bi-gear"></i> Administration
                             </a>
                             <ul class="dropdown-menu">
-                                <li><a class="dropdown-item" href="{% url 'admin_faculte_list' %}"><i class="bi bi-building"></i> Facultés</a></li>
-                                <li><a class="dropdown-item" href="{% url 'admin_promotion_list' %}"><i class="bi bi-calendar"></i> Promotions</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_faculte_management' %}"><i class="bi bi-building"></i> Facultés</a></li>
+                                <li><a class="dropdown-item" href="{% url 'admin_faculte_management' %}"><i class="bi bi-calendar"></i> Promotions</a></li>
                             </ul>
                         </li>
                     {% endif %}

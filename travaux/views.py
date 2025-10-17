@@ -149,3 +149,61 @@ def teacher_remise_detail(request, remise_id):
         'remise': remise,
     }
     return render(request, 'travaux/teacher_remise_detail.html', context)
+
+
+@login_required
+def student_rendre_travail(request, travail_id):
+    """Permet à un étudiant de rendre un travail"""
+    if not request.user.is_student_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    travail = get_object_or_404(Travail, id=travail_id, is_visible_etudiants=True)
+    
+    # Vérifier si la remise est ouverte
+    if not travail.is_remise_ouverte():
+        messages.error(request, "La date limite de remise est dépassée.")
+        return redirect('student_cours_detail', cours_id=travail.cours.id)
+    
+    # Vérifier si l'étudiant a déjà rendu ce travail
+    remise_existante = RemiseTravail.objects.filter(
+        etudiant=request.user,
+        travail=travail
+    ).first()
+    
+    if request.method == 'POST':
+        fichier_principal = request.FILES.get('fichier_principal')
+        fichier_supplementaire = request.FILES.get('fichier_supplementaire')
+        commentaire = request.POST.get('commentaire_etudiant', '')
+        
+        if not fichier_principal:
+            messages.error(request, "Vous devez joindre un fichier principal.")
+        else:
+            if remise_existante:
+                # Mise à jour de la remise existante
+                remise_existante.fichier_principal = fichier_principal
+                if fichier_supplementaire:
+                    remise_existante.fichiers_supplementaires = fichier_supplementaire
+                remise_existante.commentaire_etudiant = commentaire
+                remise_existante.date_modification = timezone.now()
+                remise_existante.save()
+                messages.success(request, "Votre travail a été mis à jour avec succès.")
+            else:
+                # Création d'une nouvelle remise
+                remise = RemiseTravail.objects.create(
+                    etudiant=request.user,
+                    travail=travail,
+                    fichier_principal=fichier_principal,
+                    fichiers_supplementaires=fichier_supplementaire,
+                    commentaire_etudiant=commentaire,
+                    statut='remis'
+                )
+                messages.success(request, "Votre travail a été rendu avec succès.")
+            
+            return redirect('student_cours_detail', cours_id=travail.cours.id)
+    
+    context = {
+        'travail': travail,
+        'remise_existante': remise_existante,
+    }
+    return render(request, 'travaux/student_rendre_travail.html', context)

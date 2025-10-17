@@ -1,0 +1,199 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Valider le Mémoire - Admin - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'admin_dashboard' %}">Tableau de bord</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'memoires:admin_memoires_list' %}">Mémoires</a></li>
+            <li class="breadcrumb-item active">Validation</li>
+        </ol>
+    </nav>
+
+    <h2 class="mb-4" style="color: var(--uom-blue);">
+        <i class="bi bi-check-circle"></i> Validation du Sujet de Mémoire
+    </h2>
+
+    <!-- Informations du sujet -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card card-uom mb-4">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">Informations du Sujet</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Titre</h6>
+                        <p class="lead">{{ memoire.titre }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Domaine</h6>
+                        <p>{{ memoire.get_domaine_display }}{% if memoire.domaine_autre %} - {{ memoire.domaine_autre }}{% endif %}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Description</h6>
+                        <p style="white-space: pre-wrap;">{{ memoire.description }}</p>
+                    </div>
+
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Objectifs</h6>
+                        <p style="white-space: pre-wrap;">{{ memoire.objectifs }}</p>
+                    </div>
+
+                    {% if memoire.commentaire_etudiant %}
+                        <div class="mb-3">
+                            <h6 style="color: var(--uom-blue);">Commentaire de l'étudiant</h6>
+                            <p style="white-space: pre-wrap;">{{ memoire.commentaire_etudiant }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Informations de l'étudiant -->
+            <div class="card card-uom mb-4">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">Étudiant</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1"><strong>Nom:</strong> {{ memoire.etudiant.get_full_name }}</p>
+                    <p class="mb-1"><strong>Matricule:</strong> {{ memoire.etudiant.matricule }}</p>
+                    <p class="mb-1"><strong>Niveau:</strong> {{ memoire.get_niveau_etudiant }}</p>
+                    <p class="mb-1"><strong>Email:</strong> {{ memoire.etudiant.email }}</p>
+                    <p class="mb-0"><strong>Soumis le:</strong> {{ memoire.date_soumission_sujet|date:"d/m/Y à H:i" }}</p>
+                </div>
+            </div>
+
+            <!-- Statut actuel -->
+            <div class="card card-uom mb-4">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">Statut</h5>
+                </div>
+                <div class="card-body text-center">
+                    {% if memoire.statut == 'soumis' %}
+                        <span class="badge bg-info fs-5">En attente de validation</span>
+                    {% else %}
+                        <span class="badge bg-secondary fs-5">{{ memoire.get_statut_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire de validation -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-uom">
+                <div class="card-header" style="background-color: #28a745; color: white;">
+                    <h5 class="mb-0"><i class="bi bi-check-circle"></i> Valider le Sujet</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="valider">
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="directeur" class="form-label">
+                                    <strong>Directeur de mémoire <span class="text-danger">*</span></strong>
+                                </label>
+                                <select class="form-select" id="directeur" name="directeur" required>
+                                    <option value="">Sélectionnez un directeur</option>
+                                    {% for enseignant in enseignants %}
+                                        <option value="{{ enseignant.id }}" {% if memoire.directeur and memoire.directeur.id == enseignant.id %}selected{% endif %}>
+                                            {{ enseignant.get_full_name }} ({{ enseignant.email }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="encadreur" class="form-label">
+                                    <strong>Encadreur</strong> (optionnel)
+                                </label>
+                                <select class="form-select" id="encadreur" name="encadreur">
+                                    <option value="">Sélectionnez un encadreur</option>
+                                    {% for enseignant in enseignants %}
+                                        <option value="{{ enseignant.id }}" {% if memoire.encadreur and memoire.encadreur.id == enseignant.id %}selected{% endif %}>
+                                            {{ enseignant.get_full_name }} ({{ enseignant.email }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="commentaire_admin" class="form-label">
+                                <strong>Commentaire pour l'étudiant</strong> (optionnel)
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="commentaire_admin" 
+                                name="commentaire_admin" 
+                                rows="3"
+                                placeholder="Ajoutez des remarques ou recommandations..."
+                            >{% if memoire.commentaire_admin %}{{ memoire.commentaire_admin }}{% endif %}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'memoires:admin_memoires_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Retour
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle"></i> Valider le Sujet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Formulaire de refus -->
+            <div class="card card-uom mt-4">
+                <div class="card-header" style="background-color: #dc3545; color: white;">
+                    <h5 class="mb-0"><i class="bi bi-x-circle"></i> Refuser le Sujet</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="refuser">
+
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Attention:</strong> 
+                            Si vous refusez ce sujet, l'étudiant devra soumettre un nouveau sujet.
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="motif_refus" class="form-label">
+                                <strong>Motif de refus <span class="text-danger">*</span></strong>
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="motif_refus" 
+                                name="motif_refus" 
+                                rows="4"
+                                required
+                                placeholder="Expliquez clairement pourquoi le sujet est refusé..."
+                            ></textarea>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="bi bi-x-circle"></i> Refuser le Sujet
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

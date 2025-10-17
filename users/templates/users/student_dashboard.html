@@ -7,24 +7,134 @@
 
 {% block content %}
 <div class="container-fluid">
-    <!-- En-tête responsive -->
-    <div class="row mb-3 mb-md-4">
+    <!-- En-tête avec profil étudiant -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
-                <div class="mb-2 mb-md-0">
-                    <h2 class="h4 h-md-3 mb-1" style="color: var(--uom-blue);">
-                        <i class="bi bi-person-badge"></i> Bienvenue, {{ user.get_full_name|default:user.username }} !
-                    </h2>
-                    <p class="text-uom-gray mb-0 small">Tableau de bord étudiant - {{ user.student_profile.niveau|default:"Niveau non défini" }}</p>
+            <div class="card card-uom shadow-sm">
+                <div class="card-body p-3 p-md-4">
+                    <div class="row align-items-center">
+                        <!-- Photo de profil -->
+                        <div class="col-auto">
+                            {% if user.student_profile.photo %}
+                                <img src="{{ user.student_profile.photo.url }}" alt="Photo de profil" 
+                                     class="rounded-circle" 
+                                     style="width: 80px; height: 80px; object-fit: cover; border: 3px solid var(--uom-blue);">
+                            {% else %}
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 80px; height: 80px; background-color: var(--uom-blue); border: 3px solid var(--uom-blue);">
+                                    <i class="bi bi-person-fill" style="font-size: 2.5rem; color: white;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Informations étudiant -->
+                        <div class="col">
+                            <h2 class="h4 mb-1" style="color: var(--uom-blue);">
+                                <i class="bi bi-person-badge"></i> {{ user.get_full_name|default:user.username }}
+                            </h2>
+                            <p class="text-muted mb-1 small">
+                                <strong>Matricule:</strong> {{ user.matricule }} | 
+                                <strong>Niveau:</strong> {{ user.student_profile.get_niveau_display|default:"Non défini" }}
+                            </p>
+                            {% if user.student_profile.promotion %}
+                            <p class="text-muted mb-0 small">
+                                <i class="bi bi-calendar3"></i> <strong>Promotion:</strong> {{ user.student_profile.promotion.nom_complet }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        
+                    </div>
                 </div>
             </div>
-            <hr class="my-3">
+        </div>
+    </div>
+
+    <!-- Section FRAIS - Style simple et beau -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom d-flex align-items-center">
+                    <i class="bi bi-cash-stack me-2" style="font-size: 1.2rem; color: var(--uom-blue);"></i>
+                    <h5 class="mb-0">FRAIS</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if frais_academique %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="border-0">Intitulé</th>
+                                    <th class="border-0 text-end">Prix</th>
+                                    <th class="border-0 text-end">Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="border-0">
+                                        <strong>Frais académiques</strong>
+                                        <br>
+                                        <small class="text-muted">{{ frais_academique.annee_academique }}</small>
+                                    </td>
+                                    <td class="border-0 text-end">
+                                        <strong style="font-size: 1.1rem; color: var(--uom-blue);">
+                                            ${{ frais_academique.montant_total|floatformat:0 }}
+                                        </strong>
+                                    </td>
+                                    <td class="border-0 text-end">
+                                        {% if frais_academique.statut == 'complet' %}
+                                            <span class="btn btn-success btn-sm px-3 py-1" style="border-radius: 20px;">
+                                                <i class="bi bi-check-circle me-1"></i>Payé
+                                            </span>
+                                        {% elif frais_academique.statut == 'partiel' %}
+                                            <span class="btn btn-warning btn-sm px-3 py-1" style="border-radius: 20px;">
+                                                <i class="bi bi-clock me-1"></i>Partiel
+                                            </span>
+                                        {% else %}
+                                            <span class="btn btn-danger btn-sm px-3 py-1" style="border-radius: 20px;">
+                                                <i class="bi bi-x-circle me-1"></i>Non payé
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% if frais_academique.statut != 'complet' %}
+                                <tr class="table-light">
+                                    <td class="border-0">
+                                        <small class="text-muted">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Montant payé: ${{ frais_academique.montant_paye|floatformat:2 }}
+                                        </small>
+                                    </td>
+                                    <td class="border-0 text-end">
+                                        <small class="text-muted">
+                                            Reste: ${{ frais_academique.montant_restant|floatformat:2 }}
+                                        </small>
+                                    </td>
+                                    <td class="border-0 text-end">
+                                        <div class="progress" style="width: 80px; height: 6px;">
+                                            <div class="progress-bar {% if frais_academique.statut == 'complet' %}bg-success{% elif frais_academique.statut == 'partiel' %}bg-warning{% else %}bg-danger{% endif %}" 
+                                                 style="width: {{ frais_academique.pourcentage_paye }}%;">
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-cash-stack" style="font-size: 3rem; color: #dee2e6;"></i>
+                        <p class="text-muted mt-2 mb-0">Aucun frais académique enregistré</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
         </div>
     </div>
 
     <!-- Statistiques rapides - Responsive -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-6">
             <div class="card card-uom text-center h-100">
                 <div class="card-body p-3">
                     <i class="bi bi-book-fill d-block mb-2" style="font-size: 1.8rem; color: var(--uom-blue);"></i>
@@ -34,32 +144,12 @@
             </div>
         </div>
         
-        <div class="col-6 col-md-3">
+        <div class="col-6 col-md-6">
             <div class="card card-uom text-center h-100">
                 <div class="card-body p-3">
                     <i class="bi bi-file-earmark-text-fill d-block mb-2" style="font-size: 1.8rem; color: var(--uom-yellow);"></i>
                     <h5 class="mb-1" style="color: var(--uom-blue);">{{ travaux_en_cours_count|default:0 }}</h5>
                     <p class="text-uom-gray mb-0 small">Travaux en cours</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-6 col-md-3">
-            <div class="card card-uom text-center h-100">
-                <div class="card-body p-3">
-                    <i class="bi bi-clock-fill d-block mb-2" style="font-size: 1.8rem; color: var(--uom-red);"></i>
-                    <h5 class="mb-1" style="color: var(--uom-blue);">{{ travaux_urgents_count|default:0 }}</h5>
-                    <p class="text-uom-gray mb-0 small">À rendre bientôt</p>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-6 col-md-3">
-            <div class="card card-uom text-center h-100">
-                <div class="card-body p-3">
-                    <i class="bi bi-graph-up-arrow d-block mb-2" style="font-size: 1.8rem; color: #28a745;"></i>
-                    <h5 class="mb-1" style="color: var(--uom-blue);">{{ moyenne_generale|default:"--" }}</h5>
-                    <p class="text-uom-gray mb-0 small">Moyenne générale</p>
                 </div>
             </div>
         </div>
@@ -101,39 +191,56 @@
             </div>
         </div>
         
-        <!-- Travaux à rendre -->
+        <!-- Travaux à rendre / Mémoire -->
         <div class="col-12 col-lg-6">
             <div class="card card-uom h-100">
                 <div class="card-header card-header-uom">
-                    <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Travaux à Rendre</h5>
+                    {% if niveau in "L3 M2" %}
+                        <h5 class="mb-0"><i class="bi bi-journal-text"></i> Mon Mémoire</h5>
+                    {% else %}
+                        <h5 class="mb-0"><i class="bi bi-file-earmark-text"></i> Travaux à Rendre</h5>
+                    {% endif %}
                 </div>
                 <div class="card-body">
-                    {% if travaux_a_rendre %}
-                        {% for travail in travaux_a_rendre %}
-                        <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
-                            <div class="flex-grow-1 mb-2 mb-sm-0">
-                                <h6 class="mb-1" style="color: var(--uom-blue);">{{ travail.titre }}</h6>
-                                <p class="mb-1 text-uom-gray small">{{ travail.get_type_travail_display }}</p>
-                                <small class="text-muted">{{ travail.enseignant.get_full_name }}</small>
-                            </div>
-                            <div class="text-start text-sm-end">
-                                {% if travail.is_remise_ouverte %}
-                                    <span class="badge badge-success d-inline-block mb-1">Ouvert</span>
-                                {% else %}
-                                    <span class="badge badge-danger d-inline-block mb-1">Fermé</span>
-                                {% endif %}
-                                <br>
-                                <small class="text-muted">{{ travail.date_limite_remise|date:"d/m/Y H:i" }}</small>
-                            </div>
-                        </div>
-                        {% endfor %}
-                        <div class="text-center mt-3">
-                            <a href="{% url 'student_travaux' %}" class="btn btn-uom-primary btn-sm">
-                                <i class="bi bi-arrow-right"></i> Voir tous les travaux
+                    {% if niveau in "L3 M2" %}
+                        <!-- Section Mémoire pour L3 et M2 -->
+                        <div class="text-center py-4">
+                            <i class="bi bi-journal-text" style="font-size: 3rem; color: var(--uom-blue);"></i>
+                            <h6 class="mt-3 mb-2" style="color: var(--uom-blue);">Gestion de votre Mémoire</h6>
+                            <p class="text-muted small">Soumettez votre sujet, déposez votre travail final et obtenez votre certificat</p>
+                            <a href="{% url 'memoires:student_memoire_dashboard' %}" class="btn btn-uom-primary">
+                                <i class="bi bi-arrow-right"></i> Accéder à mon mémoire
                             </a>
                         </div>
                     {% else %}
-                        <p class="text-center text-uom-gray">Aucun travail à rendre pour le moment.</p>
+                        <!-- Section Travaux pour les autres niveaux -->
+                        {% if travaux_a_rendre %}
+                            {% for travail in travaux_a_rendre %}
+                            <div class="d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center mb-3 p-3" style="background-color: #f8f9fa; border-radius: 8px;">
+                                <div class="flex-grow-1 mb-2 mb-sm-0">
+                                    <h6 class="mb-1" style="color: var(--uom-blue);">{{ travail.titre }}</h6>
+                                    <p class="mb-1 text-uom-gray small">{{ travail.get_type_travail_display }}</p>
+                                    <small class="text-muted">{{ travail.enseignant.get_full_name }}</small>
+                                </div>
+                                <div class="text-start text-sm-end">
+                                    {% if travail.is_remise_ouverte %}
+                                        <span class="badge badge-success d-inline-block mb-1">Ouvert</span>
+                                    {% else %}
+                                        <span class="badge badge-danger d-inline-block mb-1">Fermé</span>
+                                    {% endif %}
+                                    <br>
+                                    <small class="text-muted">{{ travail.date_limite_remise|date:"d/m/Y H:i" }}</small>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            <div class="text-center mt-3">
+                                <a href="{% url 'student_travaux' %}" class="btn btn-uom-primary btn-sm">
+                                    <i class="bi bi-arrow-right"></i> Voir tous les travaux
+                                </a>
+                            </div>
+                        {% else %}
+                            <p class="text-center text-uom-gray">Aucun travail à rendre pour le moment.</p>
+                        {% endif %}
                     {% endif %}
                 </div>
             </div>

@@ -1,0 +1,65 @@
+<!-- Modal: Déposer le mémoire final -->
+<div class="modal fade" id="modalDeposerMemoire" tabindex="-1" aria-labelledby="modalDeposerLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--uom-blue); color: white;">
+                <h5 class="modal-title" id="modalDeposerLabel">
+                    <i class="bi bi-cloud-upload"></i> Déposer le mémoire final
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'memoires:student_deposer_memoire' %}" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Important:</strong> 
+                        Votre mémoire doit être au format PDF uniquement.
+                    </div>
+                    
+                    {% if memoire and memoire.fichier_memoire %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Attention:</strong> 
+                            Un fichier est déjà déposé. Le téléverser à nouveau remplacera l'ancien fichier.
+                            <p class="mb-0 mt-2"><small>Fichier actuel: {{ memoire.fichier_memoire.name }}</small></p>
+                        </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="fichier_memoire" class="form-label">
+                            <strong>Fichier PDF du mémoire <span class="text-danger">*</span></strong>
+                        </label>
+                        <input 
+                            type="file" 
+                            class="form-control" 
+                            id="fichier_memoire" 
+                            name="fichier_memoire" 
+                            accept=".pdf"
+                            required
+                        >
+                        <small class="text-muted">Taille maximale: 50 MB</small>
+                    </div>
+                    
+                    <div class="alert alert-success">
+                        <h6><i class="bi bi-check-circle"></i> Étapes suivantes:</h6>
+                        <ol class="mb-0 ps-3">
+                            <li>Après le dépôt, vous pourrez lancer la vérification anti-plagiat</li>
+                            <li>Si le scan est bon (&lt; 20%), vous pourrez confirmer et obtenir votre certificat</li>
+                            <li>Le certificat sera téléchargeable immédiatement</li>
+                        </ol>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn btn-uom-primary">
+                        <i class="bi bi-upload"></i> Déposer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+

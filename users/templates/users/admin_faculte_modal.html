@@ -1,0 +1,111 @@
+<!-- Modal Créer/Modifier Faculté -->
+<div class="modal fade" id="faculteModal" tabindex="-1" aria-labelledby="faculteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--uom-blue); color: white;">
+                <h5 class="modal-title" id="faculteModalLabel">
+                    <i class="bi bi-building"></i> <span id="faculteModalTitle">Créer une Faculté</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="faculteForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="faculteId" name="faculte_id">
+                    
+                    <div class="row g-3">
+                        <!-- Code de la faculté -->
+                        <div class="col-md-6">
+                            <label for="faculteCode" class="form-label">
+                                Code de la Faculté <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="faculteCode" name="code" 
+                                   placeholder="Ex: FSI, FSEG, FLSH" required>
+                            <div class="form-text">Code unique de la faculté</div>
+                        </div>
+                        
+                        <!-- Nom de la faculté -->
+                        <div class="col-md-6">
+                            <label for="faculteNom" class="form-label">
+                                Nom de la Faculté <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="faculteNom" name="nom" 
+                                   placeholder="Ex: Faculté des Sciences de l'Informatique" required>
+                            <div class="form-text">Nom complet de la faculté</div>
+                        </div>
+                        
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label for="faculteDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="faculteDescription" name="description" 
+                                      rows="3" placeholder="Description de la faculté (optionnel)"></textarea>
+                        </div>
+                        
+                        <!-- Statut -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="faculteActive" name="is_active" checked>
+                                <label class="form-check-label" for="faculteActive">
+                                    <strong>Faculté Active</strong>
+                                </label>
+                                <div class="form-text">Une faculté active peut être assignée aux étudiants</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn btn-uom-primary" id="faculteSubmitBtn">
+                        <i class="bi bi-check-circle"></i> <span id="faculteSubmitText">Créer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Supprimer Faculté -->
+<div class="modal fade" id="deleteFaculteModal" tabindex="-1" aria-labelledby="deleteFaculteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteFaculteModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmer la Suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Attention !</strong> Cette action est irréversible.
+                </div>
+                
+                <p>Êtes-vous sûr de vouloir supprimer la faculté :</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 id="deleteFaculteInfo"></h6>
+                        <small class="text-muted" id="deleteFaculteDetails"></small>
+                    </div>
+                </div>
+                
+                <div class="alert alert-danger mt-3">
+                    <strong>Conséquences :</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>La faculté sera définitivement supprimée</li>
+                        <li>Les étudiants liés devront être réassignés</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteFaculte">
+                    <i class="bi bi-trash"></i> Confirmer la Suppression
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

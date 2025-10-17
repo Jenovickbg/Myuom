@@ -218,7 +218,7 @@ def admin_cours_edit(request, cours_id):
         messages.success(request, f"Cours {cours.code} modifié avec succès.")
         return redirect('cours:admin_cours_list')
     
-    return redirect('admin_cours_list')
+    return redirect('cours:admin_cours_list')
 
 
 @login_required
@@ -236,7 +236,7 @@ def admin_cours_delete(request, cours_id):
         messages.success(request, f"Cours {code} supprimé avec succès.")
         return redirect('cours:admin_cours_list')
     
-    return redirect('admin_cours_list')
+    return redirect('cours:admin_cours_list')
 
 
 @login_required
@@ -252,7 +252,7 @@ def admin_cours_toggle_active(request, cours_id):
     
     status = "activé" if cours.is_actif else "désactivé"
     messages.success(request, f"Cours {cours.code} {status} avec succès.")
-    return redirect('admin_cours_list')
+    return redirect('cours:admin_cours_list')
 
 
 # ======================== VUES ENSEIGNANT ========================

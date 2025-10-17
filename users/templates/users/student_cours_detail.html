@@ -4,13 +4,11 @@
 {% block title %}Détails du Cours - {{ cours.titre }} - MyUOM{% endblock %}
 
 {% block content %}
-<!-- En-tête avec image de fond -->
-<div class="course-header" style="background: linear-gradient(135deg, rgba(0,123,255,0.8), rgba(52,144,220,0.8)), url('{% static 'images/course-bg.jpg' %}'); background-size: cover; background-position: center; height: 150px; display: flex; align-items: center; margin: -1.5rem -1.5rem 2rem -1.5rem;">
-    <div class="container">
-        <h1 class="text-white mb-0" style="font-size: 1.8rem; font-weight: 600; text-shadow: 1px 1px 3px rgba(0,0,0,0.3);">
-            {{ cours.titre }}
-        </h1>
-    </div>
+<!-- En-tête simple sans image de fond -->
+<div class="container-fluid mb-4">
+    <h2 class="mb-0" style="color: var(--uom-blue); font-weight: 600;">
+        {{ cours.titre }}
+    </h2>
 </div>
 
 <div class="container-fluid">
@@ -213,9 +211,16 @@
                                                     {% endif %}
                                                 </small>
                                                 {% if not remise %}
-                                                    <a href="#" class="btn btn-uom-primary btn-sm">Rendre le travail</a>
+                                                    <a href="{% url 'travaux:student_rendre_travail' travail.id %}" class="btn btn-uom-primary btn-sm">
+                                                        <i class="bi bi-upload"></i> Rendre le travail
+                                                    </a>
                                                 {% else %}
-                                                    <span class="badge bg-success">Remis</span>
+                                                    <span class="badge bg-success">
+                                                        <i class="bi bi-check-circle"></i> Remis le {{ remise.date_remise|date:"d/m/Y" }}
+                                                    </span>
+                                                    <a href="{% url 'travaux:student_rendre_travail' travail.id %}" class="btn btn-outline-secondary btn-sm ms-2">
+                                                        <i class="bi bi-pencil"></i> Modifier
+                                                    </a>
                                                 {% endif %}
                                             </div>
                                         </div>
@@ -293,16 +298,12 @@
 </div>
 
 <style>
-.course-header {
-    position: relative;
-    overflow: hidden;
-}
-
 .course-nav-item {
     padding: 12px 20px;
     color: #6c757d;
     border-left: 4px solid transparent;
     transition: all 0.3s ease;
+    cursor: pointer;
 }
 
 .course-nav-item:hover {

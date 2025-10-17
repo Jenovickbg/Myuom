@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <title>Certificat de Dépôt de Mémoire</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #000;
+        }
+        
+        .certificate-border {
+            border: 10px double #104276;
+            padding: 25px;
+            background: white;
+            min-height: 18cm;
+        }
+        
+        .inner-border {
+            border: 2px solid #ebe95d;
+            padding: 20px;
+        }
+        
+        /* En-tête */
+        .header {
+            text-align: center;
+            padding-bottom: 12px;
+            border-bottom: 3px solid #104276;
+            margin-bottom: 15px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 8px;
+        }
+        
+        .university-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #104276;
+            letter-spacing: 2px;
+            margin: 5px 0;
+        }
+        
+        .country {
+            font-size: 12px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        /* Titre */
+        .certificate-title {
+            text-align: center;
+            margin: 20px 0 15px 0;
+            padding: 12px;
+            background-color: #104276;
+            color: white;
+        }
+        
+        .title-text {
+            font-size: 32px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            margin: 0;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            margin: 5px 0 0 0;
+            font-style: italic;
+        }
+        
+        /* Corps */
+        .certificate-body {
+            padding: 15px 30px;
+        }
+        
+        .intro-text {
+            font-size: 13px;
+            text-align: center;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .student-name {
+            font-weight: bold;
+            font-size: 16px;
+            color: #104276;
+            text-decoration: underline;
+        }
+        
+        /* Titre du mémoire */
+        .memoire-title-box {
+            background-color: #e3f2fd;
+            border-left: 5px solid #104276;
+            padding: 12px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .memoire-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #104276;
+            font-style: italic;
+        }
+        
+        /* Tableau d'informations */
+        .info-table {
+            width: 100%;
+            margin: 15px 0;
+            border-collapse: collapse;
+        }
+        
+        .info-table td {
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            font-size: 12px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            background-color: #104276;
+            color: white;
+            width: 25%;
+            text-align: left;
+        }
+        
+        .info-value {
+            background-color: #ffffff;
+            width: 25%;
+        }
+        
+        /* Validation */
+        .validation-box {
+            background-color: #d4edda;
+            border: 2px solid #28a745;
+            padding: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+        
+        .validation-text {
+            font-size: 12px;
+            color: #155724;
+            font-weight: bold;
+        }
+        
+        /* Footer */
+        .footer-section {
+            margin-top: 15px;
+            width: 100%;
+        }
+        
+        .footer-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .footer-table td {
+            width: 50%;
+            vertical-align: top;
+            padding: 10px;
+        }
+        
+        .certificate-number-box {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            font-size: 10px;
+        }
+        
+        .signature-box {
+            text-align: center;
+            padding: 10px;
+        }
+        
+        .signature-line {
+            border-top: 2px solid #104276;
+            width: 180px;
+            margin: 40px auto 5px;
+        }
+        
+        .signature-title {
+            font-size: 11px;
+            font-weight: bold;
+            color: #104276;
+        }
+        
+        /* Note de bas de page */
+        .bottom-note {
+            text-align: center;
+            font-size: 9px;
+            color: #666;
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px solid #dee2e6;
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate-border">
+        <div class="inner-border">
+            <!-- En-tête -->
+            <div class="header">
+                <div class="logo">
+                    {% if logo_path %}
+                    <img src="file://{{ logo_path }}" style="height: 50px; margin-bottom: 5px;">
+                    {% endif %}
+                </div>
+                <div class="university-name">UNIVERSITÉ DE MBUJIMAYI</div>
+                <div class="country">République Démocratique du Congo</div>
+            </div>
+
+            <!-- Titre -->
+            <div class="certificate-title">
+                <div class="title-text">CERTIFICAT DE DÉPÔT DE MÉMOIRE</div>
+                <div class="subtitle">Année Académique {{ certificat.annee_academique }}</div>
+            </div>
+
+            <!-- Corps -->
+            <div class="certificate-body">
+                <div class="intro-text">
+                    L'Université de Mbujimayi certifie par la présente que
+                    <span class="student-name">{{ etudiant.get_full_name|upper }}</span>, 
+                    matricule <strong>{{ etudiant.matricule }}</strong>, 
+                    étudiant(e) en <strong>{{ student_profile.get_niveau_display }}</strong> 
+                    de la Faculté <strong>{{ student_profile.faculte.nom }}</strong>,
+                    a déposé son mémoire de fin d'études intitulé :
+                </div>
+
+                <!-- Titre du mémoire -->
+                <div class="memoire-title-box">
+                    <div class="memoire-title">"{{ memoire.titre }}"</div>
+                </div>
+
+                <!-- Informations en tableau -->
+                <table class="info-table">
+                    <tr>
+                        <td class="info-label">DOMAINE D'ÉTUDE</td>
+                        <td class="info-value">{{ memoire.get_domaine_display }}{% if memoire.domaine_autre %} - {{ memoire.domaine_autre }}{% endif %}</td>
+                        <td class="info-label">DATE DE DÉPÔT</td>
+                        <td class="info-value">{{ memoire.date_depot_final|date:"d/m/Y" }}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">DIRECTEUR</td>
+                        <td class="info-value">{% if memoire.directeur %}{{ memoire.directeur.get_full_name }}{% else %}Non attribué{% endif %}</td>
+                        <td class="info-label">ENCADREUR</td>
+                        <td class="info-value">{% if memoire.encadreur %}{{ memoire.encadreur.get_full_name }}{% else %}Non attribué{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td class="info-label">SCORE ANTI-PLAGIAT</td>
+                        <td class="info-value" style="color: #28a745; font-weight: bold;">{{ memoire.score_plagiat|floatformat:2 }}% (Acceptable)</td>
+                        <td class="info-label">STATUT</td>
+                        <td class="info-value" style="color: #28a745; font-weight: bold;">CERTIFIÉ</td>
+                    </tr>
+                </table>
+
+                <!-- Validation -->
+                <div class="validation-box">
+                    <div class="validation-text">
+                        ✓ Document déposé conformément aux exigences | ✓ Contrôle anti-plagiat réussi | ✓ Certificat authentique
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer-section">
+                <table class="footer-table">
+                    <tr>
+                        <td>
+                            <div class="certificate-number-box">
+                                <strong>NUMÉRO DE CERTIFICAT:</strong> {{ certificat.numero_certificat }}<br>
+                                <strong>DATE D'ÉMISSION:</strong> {{ certificat.date_emission|date:"d/m/Y à H:i" }}<br>
+                                <strong>GÉNÉRÉ PAR:</strong> Système MyUOM
+                            </div>
+                        </td>
+                        <td>
+                            <div class="signature-box">
+                                <div style="font-size: 11px;">Fait à Mbujimayi, le {{ certificat.date_emission|date:"d F Y" }}</div>
+                                <div class="signature-line"></div>
+                                <div class="signature-title">LE SECRÉTAIRE ACADÉMIQUE</div>
+                            </div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Note de bas -->
+            <div class="bottom-note">
+                Ce certificat est authentique et vérifiable via le numéro {{ certificat.numero_certificat }} | 
+                Université de Mbujimayi - B.P. 225 Mbujimayi - RDC | www.uom.ac.cd
+            </div>
+        </div>
+    </div>
+</body>
+</html>

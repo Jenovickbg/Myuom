@@ -58,6 +58,49 @@
     </div>
 </div>
 
+<!-- Statistiques facultés et promotions -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-building" style="font-size: 3rem; color: var(--uom-blue);"></i>
+                <h3 class="mt-3" style="color: var(--uom-blue);">{{ total_facultes }}</h3>
+                <p class="text-uom-gray mb-0">Facultés</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-calendar3" style="font-size: 3rem; color: var(--uom-yellow);"></i>
+                <h3 class="mt-3" style="color: var(--uom-blue);">{{ total_promotions }}</h3>
+                <p class="text-uom-gray mb-0">Promotions</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-check-circle-fill" style="font-size: 3rem; color: #28a745;"></i>
+                <h3 class="mt-3" style="color: var(--uom-blue);">{{ active_facultes }}</h3>
+                <p class="text-uom-gray mb-0">Facultés actives</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3">
+        <div class="card card-uom text-center">
+            <div class="card-body">
+                <i class="bi bi-check-circle-fill" style="font-size: 3rem; color: #28a745;"></i>
+                <h3 class="mt-3" style="color: var(--uom-blue);">{{ active_promotions }}</h3>
+                <p class="text-uom-gray mb-0">Promotions actives</p>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Actions rapides -->
 <div class="row">
     <div class="col-12">
@@ -107,19 +150,92 @@
     <div class="col-md-4 mb-3">
         <div class="card card-uom h-100">
             <div class="card-body">
-                <h5 style="color: var(--uom-blue);"><i class="bi bi-gear-fill"></i> Configuration</h5>
-                <p class="text-uom-gray">Paramètres système et configurations</p>
+                <h5 style="color: var(--uom-blue);"><i class="bi bi-journal-text"></i> Mémoires</h5>
+                <p class="text-uom-gray">Gestion des mémoires de fin d'études (L3 et M2)</p>
                 <div class="d-grid gap-2">
-                    <a href="#" class="btn btn-outline-secondary">
-                        <i class="bi bi-sliders"></i> Paramètres
+                    <a href="{% url 'memoires:admin_memoires_list' %}" class="btn btn-uom-primary">
+                        <i class="bi bi-list-ul"></i> Voir tous les mémoires
                     </a>
-                    <a href="#" class="btn btn-outline-secondary">
-                        <i class="bi bi-journal-text"></i> Logs système
+                    <a href="{% url 'memoires:admin_memoires_list' %}?statut=soumis" class="btn btn-warning">
+                        <i class="bi bi-clock"></i> En attente de validation
                     </a>
                 </div>
             </div>
         </div>
     </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card card-uom h-100">
+            <div class="card-body">
+                <h5 style="color: var(--uom-blue);"><i class="bi bi-building"></i> Gestion des facultés</h5>
+                <p class="text-uom-gray">Créer et gérer les facultés de l'université</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'admin_faculte_management' %}" class="btn btn-uom-primary">
+                        <i class="bi bi-gear"></i> Gérer les facultés
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4 mb-3">
+        <div class="card card-uom h-100">
+            <div class="card-body">
+                <h5 style="color: var(--uom-blue);"><i class="bi bi-calendar3"></i> Gestion des promotions</h5>
+                <p class="text-uom-gray">Créer et gérer les promotions académiques</p>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'admin_faculte_management' %}" class="btn btn-uom-primary">
+                        <i class="bi bi-gear"></i> Gérer les promotions
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Section Mémoires en attente -->
+<div class="row mt-4">
+    <div class="col-12">
+        <h4 style="color: var(--uom-blue);"><i class="bi bi-journal-check"></i> Mémoires en attente de validation</h4>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card card-uom">
+            <div class="card-body">
+                <div id="memoires-en-attente">
+                    <p class="text-center text-muted">Chargement...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Charger les mémoires en attente via AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    fetch("{% url 'memoires:admin_memoires_list' %}?statut=soumis")
+        .then(response => response.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const table = doc.querySelector('.table-responsive');
+            const container = document.getElementById('memoires-en-attente');
+            
+            if (table) {
+                container.innerHTML = table.outerHTML;
+            } else {
+                container.innerHTML = '<p class="text-center text-muted">Aucun mémoire en attente</p>';
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            document.getElementById('memoires-en-attente').innerHTML = '<p class="text-center text-danger">Erreur de chargement</p>';
+        });
+});
+</script>
 </div>
 {% endblock %}
 

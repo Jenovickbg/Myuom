@@ -41,9 +41,22 @@ urlpatterns = [
     path('admin/teachers/<int:user_id>/toggle-active/', views.admin_teacher_toggle_active, name='admin_teacher_toggle_active'),
     path('admin/teachers/<int:user_id>/reset-password/', views.admin_teacher_reset_password, name='admin_teacher_reset_password'),
     
-    # Gestion des facultés et promotions (Admin)
-    path('admin/facultes/', views.admin_faculte_list, name='admin_faculte_list'),
-    path('admin/promotions/', views.admin_promotion_list, name='admin_promotion_list'),
+    # Gestion des facultés et promotions (Admin) - Version modales
+    path('admin/facultes-promotions/', views.admin_faculte_management, name='admin_faculte_management'),
+    
+    # APIs pour les facultés
+    path('admin/facultes/table/', views.admin_faculte_table, name='admin_faculte_table'),
+    path('admin/facultes/create/', views.admin_faculte_create, name='admin_faculte_create'),
+    path('admin/facultes/<int:faculte_id>/data/', views.admin_faculte_data, name='admin_faculte_data'),
+    path('admin/facultes/<int:faculte_id>/edit/', views.admin_faculte_edit, name='admin_faculte_edit'),
+    path('admin/facultes/<int:faculte_id>/delete/', views.admin_faculte_delete, name='admin_faculte_delete'),
+    
+    # APIs pour les promotions
+    path('admin/promotions/table/', views.admin_promotion_table, name='admin_promotion_table'),
+    path('admin/promotions/create/', views.admin_promotion_create, name='admin_promotion_create'),
+    path('admin/promotions/<int:promotion_id>/data/', views.admin_promotion_data, name='admin_promotion_data'),
+    path('admin/promotions/<int:promotion_id>/edit/', views.admin_promotion_edit, name='admin_promotion_edit'),
+    path('admin/promotions/<int:promotion_id>/delete/', views.admin_promotion_delete, name='admin_promotion_delete'),
 ]
 
 

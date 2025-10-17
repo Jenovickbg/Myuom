@@ -1,0 +1,144 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Rendre le Travail - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'student_dashboard' %}">Tableau de bord</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'student_cours_detail' travail.cours.id %}">{{ travail.cours.titre }}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Rendre le travail</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card card-uom">
+                <div class="card-header card-header-uom">
+                    <h5 class="mb-0">
+                        <i class="bi bi-upload"></i> 
+                        {% if remise_existante %}
+                            Mettre à jour le travail
+                        {% else %}
+                            Rendre le travail
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Informations du travail -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="mb-2"><strong>{{ travail.titre }}</strong></h6>
+                        <p class="mb-2">{{ travail.description }}</p>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small><strong>Type:</strong> {{ travail.get_type_travail_display }}</small>
+                            </div>
+                            <div class="col-md-6">
+                                <small><strong>Date limite:</strong> {{ travail.date_limite_remise|date:"d/m/Y à H:i" }}</small>
+                            </div>
+                        </div>
+                        {% if travail.fichier_consignes %}
+                            <div class="mt-2">
+                                <a href="{{ travail.fichier_consignes.url }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                                    <i class="bi bi-file-earmark-pdf"></i> Télécharger l'énoncé
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Avertissement si remise existante -->
+                    {% if remise_existante %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> <strong>Attention:</strong> Vous avez déjà rendu ce travail le {{ remise_existante.date_remise|date:"d/m/Y à H:i" }}. 
+                            En soumettant à nouveau, vous remplacerez votre remise précédente.
+                        </div>
+                    {% endif %}
+
+                    <!-- Formulaire de remise -->
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="fichier_principal" class="form-label">
+                                <strong>Fichier principal <span class="text-danger">*</span></strong>
+                            </label>
+                            <input 
+                                type="file" 
+                                class="form-control" 
+                                id="fichier_principal" 
+                                name="fichier_principal" 
+                                required
+                                accept=".pdf,.doc,.docx,.zip,.rar,.py,.java,.c,.cpp"
+                            >
+                            <small class="text-muted">
+                                Formats acceptés: PDF, Word, ZIP, RAR, Code source
+                            </small>
+                            {% if remise_existante and remise_existante.fichier_principal %}
+                                <div class="mt-2">
+                                    <small class="text-success">
+                                        <i class="bi bi-check-circle"></i> Fichier actuel: {{ remise_existante.fichier_principal.name }}
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="fichier_supplementaire" class="form-label">
+                                <strong>Fichiers supplémentaires</strong> (optionnel)
+                            </label>
+                            <input 
+                                type="file" 
+                                class="form-control" 
+                                id="fichier_supplementaire" 
+                                name="fichier_supplementaire"
+                                accept=".pdf,.doc,.docx,.zip,.rar,.py,.java,.c,.cpp"
+                            >
+                            <small class="text-muted">
+                                Vous pouvez joindre un fichier complémentaire (captures d'écran, documentation, etc.)
+                            </small>
+                            {% if remise_existante and remise_existante.fichiers_supplementaires %}
+                                <div class="mt-2">
+                                    <small class="text-success">
+                                        <i class="bi bi-check-circle"></i> Fichier actuel: {{ remise_existante.fichiers_supplementaires.name }}
+                                    </small>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="commentaire_etudiant" class="form-label">
+                                <strong>Commentaire</strong> (optionnel)
+                            </label>
+                            <textarea 
+                                class="form-control" 
+                                id="commentaire_etudiant" 
+                                name="commentaire_etudiant" 
+                                rows="4"
+                                placeholder="Ajoutez un commentaire pour l'enseignant (difficultés rencontrées, questions, etc.)"
+                            >{% if remise_existante %}{{ remise_existante.commentaire_etudiant }}{% endif %}</textarea>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'student_cours_detail' travail.cours.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-uom-primary">
+                                <i class="bi bi-upload"></i> 
+                                {% if remise_existante %}
+                                    Mettre à jour
+                                {% else %}
+                                    Rendre le travail
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+

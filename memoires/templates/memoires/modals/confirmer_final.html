@@ -1,0 +1,70 @@
+<!-- Modal: Confirmer et obtenir certificat -->
+<div class="modal fade" id="modalConfirmerFinal" tabindex="-1" aria-labelledby="modalConfirmerLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #28a745; color: white;">
+                <h5 class="modal-title" id="modalConfirmerLabel">
+                    <i class="bi bi-award"></i> Confirmer et obtenir le certificat
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'memoires:student_confirmer_final' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-patch-check" style="font-size: 5rem; color: #ffd700;"></i>
+                    </div>
+                    
+                    <h5 class="text-center mb-4">🎓 Félicitations ! Vous êtes presque au bout ! 🎓</h5>
+                    
+                    <div class="alert alert-success">
+                        <i class="bi bi-check-circle"></i> <strong>Vérifications passées:</strong>
+                        <ul class="mb-0 mt-2 ps-3">
+                            <li>✅ Sujet validé par l'administration</li>
+                            <li>✅ Mémoire déposé en format PDF</li>
+                            <li>✅ Scan anti-plagiat réussi ({{ memoire.score_plagiat|floatformat:2 }}%)</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="card border-warning mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="bi bi-question-circle"></i> Question importante</h6>
+                            <p class="card-text mb-0">
+                                <strong>Êtes-vous sûr(e) que vous avez terminé votre travail et que vous souhaitez obtenir votre certificat de dépôt ?</strong>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> <strong>Après confirmation:</strong>
+                        <ul class="mb-0 mt-2 ps-3">
+                            <li>Votre certificat sera généré immédiatement</li>
+                            <li>Vous pourrez le télécharger en PDF</li>
+                            <li>Le certificat contiendra:
+                                <ul>
+                                    <li>Numéro de certificat unique</li>
+                                    <li>Titre de votre mémoire</li>
+                                    <li>Vos informations</li>
+                                    <li>Date de dépôt</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <p class="text-center mb-0 fw-bold">Une fois confirmé, cette action est irréversible.</p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Non, pas encore
+                    </button>
+                    <button type="submit" name="confirmation_finale" value="oui" class="btn btn-success btn-lg">
+                        <i class="bi bi-award"></i> Oui, je confirme !
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+

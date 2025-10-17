@@ -1,0 +1,78 @@
+<!-- Modal: Détails du sujet -->
+<div class="modal fade" id="modalDetailsSujet" tabindex="-1" aria-labelledby="modalDetailsLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--uom-blue); color: white;">
+                <h5 class="modal-title" id="modalDetailsLabel">
+                    <i class="bi bi-info-circle"></i> Détails du sujet de mémoire
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                {% if memoire %}
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Titre</h6>
+                        <p>{{ memoire.titre }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Domaine</h6>
+                        <p>{{ memoire.get_domaine_display }}{% if memoire.domaine_autre %} - {{ memoire.domaine_autre }}{% endif %}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Description</h6>
+                        <p style="white-space: pre-wrap;">{{ memoire.description }}</p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Objectifs</h6>
+                        <p style="white-space: pre-wrap;">{{ memoire.objectifs }}</p>
+                    </div>
+                    
+                    {% if memoire.commentaire_etudiant %}
+                        <div class="mb-3">
+                            <h6 style="color: var(--uom-blue);">Commentaire</h6>
+                            <p style="white-space: pre-wrap;">{{ memoire.commentaire_etudiant }}</p>
+                        </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Encadrement</h6>
+                        {% if memoire.directeur %}
+                            <p class="mb-1"><strong>Directeur:</strong> {{ memoire.directeur.get_full_name }}</p>
+                        {% else %}
+                            <p class="text-muted mb-1">Directeur non encore attribué</p>
+                        {% endif %}
+                        
+                        {% if memoire.encadreur %}
+                            <p class="mb-0"><strong>Encadreur:</strong> {{ memoire.encadreur.get_full_name }}</p>
+                        {% else %}
+                            <p class="text-muted mb-0">Encadreur non encore attribué</p>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <h6 style="color: var(--uom-blue);">Dates</h6>
+                        <p class="mb-1"><strong>Soumis le:</strong> {{ memoire.date_soumission_sujet|date:"d/m/Y à H:i" }}</p>
+                        {% if memoire.date_validation %}
+                            <p class="mb-0"><strong>Validé le:</strong> {{ memoire.date_validation|date:"d/m/Y à H:i" }}</p>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p class="text-center text-muted">Aucun sujet soumis</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+

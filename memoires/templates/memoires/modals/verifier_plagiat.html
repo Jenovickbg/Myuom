@@ -1,0 +1,46 @@
+<!-- Modal: Vérifier le plagiat -->
+<div class="modal fade" id="modalVerifierPlagiat" tabindex="-1" aria-labelledby="modalVerifierLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #ffc107; color: #000;">
+                <h5 class="modal-title" id="modalVerifierLabel">
+                    <i class="bi bi-shield-check"></i> Vérification anti-plagiat
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'memoires:student_verifier_plagiat' %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="text-center mb-4">
+                        <i class="bi bi-shield-exclamation" style="font-size: 4rem; color: #ffc107;"></i>
+                    </div>
+                    
+                    <h6 class="text-center mb-3">Lancer la vérification anti-plagiat ?</h6>
+                    
+                    <div class="alert alert-warning">
+                        <i class="bi bi-info-circle"></i> <strong>Information:</strong>
+                        <ul class="mb-0 mt-2 ps-3">
+                            <li>Le scan va analyser votre document</li>
+                            <li>Un score de plagiat &lt; 20% est acceptable</li>
+                            <li>Le processus prend quelques instants</li>
+                            <li>Vous pourrez voir le rapport détaillé</li>
+                        </ul>
+                    </div>
+                    
+                    <p class="text-center mb-0"><strong>Êtes-vous prêt à lancer le scan ?</strong></p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Non, pas maintenant
+                    </button>
+                    <button type="submit" name="confirmation" value="oui" class="btn btn-warning">
+                        <i class="bi bi-shield-check"></i> Oui, lancer le scan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+

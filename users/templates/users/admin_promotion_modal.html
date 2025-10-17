@@ -1,0 +1,113 @@
+<!-- Modal Créer/Modifier Promotion -->
+<div class="modal fade" id="promotionModal" tabindex="-1" aria-labelledby="promotionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--uom-blue); color: white;">
+                <h5 class="modal-title" id="promotionModalLabel">
+                    <i class="bi bi-calendar3"></i> <span id="promotionModalTitle">Créer une Promotion</span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="promotionForm">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <input type="hidden" id="promotionId" name="promotion_id">
+                    
+                    <div class="row g-3">
+                        <!-- Année de début -->
+                        <div class="col-md-6">
+                            <label for="promotionAnneeDebut" class="form-label">
+                                Année de Début <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="promotionAnneeDebut" name="annee_debut" 
+                                   min="2020" max="2030" required>
+                            <div class="form-text">Année de début de la promotion</div>
+                        </div>
+                        
+                        <!-- Année de fin -->
+                        <div class="col-md-6">
+                            <label for="promotionAnneeFin" class="form-label">
+                                Année de Fin <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="promotionAnneeFin" name="annee_fin" 
+                                   min="2021" max="2031" required>
+                            <div class="form-text">Année de fin de la promotion</div>
+                        </div>
+                        
+                        <!-- Aperçu de la promotion -->
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Aperçu de la promotion :</strong>
+                                <span id="promotionPreview" class="ms-2">Sélectionnez les années</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Statut -->
+                        <div class="col-12">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="promotionActive" name="is_active" checked>
+                                <label class="form-check-label" for="promotionActive">
+                                    <strong>Promotion Active</strong>
+                                </label>
+                                <div class="form-text">Une promotion active peut être assignée aux étudiants</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn btn-uom-primary" id="promotionSubmitBtn">
+                        <i class="bi bi-check-circle"></i> <span id="promotionSubmitText">Créer</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Supprimer Promotion -->
+<div class="modal fade" id="deletePromotionModal" tabindex="-1" aria-labelledby="deletePromotionModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deletePromotionModalLabel">
+                    <i class="bi bi-exclamation-triangle"></i> Confirmer la Suppression
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Attention !</strong> Cette action est irréversible.
+                </div>
+                
+                <p>Êtes-vous sûr de vouloir supprimer la promotion :</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 id="deletePromotionInfo"></h6>
+                        <small class="text-muted" id="deletePromotionDetails"></small>
+                    </div>
+                </div>
+                
+                <div class="alert alert-danger mt-3">
+                    <strong>Conséquences :</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>La promotion sera définitivement supprimée</li>
+                        <li>Les étudiants liés devront être réassignés</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                    <i class="bi bi-x-circle"></i> Annuler
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeletePromotion">
+                    <i class="bi bi-trash"></i> Confirmer la Suppression
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

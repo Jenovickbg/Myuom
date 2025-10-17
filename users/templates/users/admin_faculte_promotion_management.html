@@ -1,0 +1,457 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Gestion Facultés & Promotions - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between">
+                <div class="mb-2 mb-md-0">
+                    <h2 class="h4 mb-1" style="color: var(--uom-blue);">
+                        <i class="bi bi-gear"></i> Gestion Facultés & Promotions
+                    </h2>
+                    <p class="text-muted mb-0 small">Gérer les facultés et promotions de l'université</p>
+                </div>
+                <div>
+                    <button class="btn btn-uom-primary me-2" onclick="openFaculteModal()">
+                        <i class="bi bi-plus-circle"></i> Nouvelle Faculté
+                    </button>
+                    <button class="btn btn-uom-secondary" onclick="openPromotionModal()">
+                        <i class="bi bi-plus-circle"></i> Nouvelle Promotion
+                    </button>
+                </div>
+            </div>
+            <hr class="my-3">
+        </div>
+    </div>
+
+    <!-- Onglets -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <ul class="nav nav-tabs" id="managementTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="facultes-tab" data-bs-toggle="tab" data-bs-target="#facultes" type="button" role="tab">
+                        <i class="bi bi-building"></i> Facultés
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="promotions-tab" data-bs-toggle="tab" data-bs-target="#promotions" type="button" role="tab">
+                        <i class="bi bi-calendar3"></i> Promotions
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Contenu des onglets -->
+    <div class="tab-content" id="managementTabsContent">
+        <!-- Onglet Facultés -->
+        <div class="tab-pane fade show active" id="facultes" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="faculteSearch" placeholder="Rechercher une faculté...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="faculteStatusFilter">
+                        <option value="">Tous les statuts</option>
+                        <option value="active">Actives</option>
+                        <option value="inactive">Inactives</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-primary" onclick="searchFacultes()">
+                        <i class="bi bi-search"></i> Filtrer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card card-uom">
+                <div class="card-body p-0">
+                    <div id="facultesTable">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Onglet Promotions -->
+        <div class="tab-pane fade" id="promotions" role="tabpanel">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <input type="text" class="form-control" id="promotionSearch" placeholder="Rechercher une promotion...">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" id="promotionStatusFilter">
+                        <option value="">Tous les statuts</option>
+                        <option value="active">Actives</option>
+                        <option value="inactive">Inactives</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button class="btn btn-outline-primary" onclick="searchPromotions()">
+                        <i class="bi bi-search"></i> Filtrer
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card card-uom">
+                <div class="card-body p-0">
+                    <div id="promotionsTable">
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Chargement...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modales -->
+{% include 'users/admin_faculte_modal.html' %}
+{% include 'users/admin_promotion_modal.html' %}
+
+<script>
+// Variables globales
+let currentFaculteId = null;
+let currentPromotionId = null;
+
+// ===== GESTION DES FACULTÉS =====
+
+function openFaculteModal(faculteId = null) {
+    currentFaculteId = faculteId;
+    const modal = new bootstrap.Modal(document.getElementById('faculteModal'));
+    
+    if (faculteId) {
+        // Mode édition
+        document.getElementById('faculteModalTitle').textContent = 'Modifier la Faculté';
+        document.getElementById('faculteSubmitText').textContent = 'Modifier';
+        loadFaculteData(faculteId);
+    } else {
+        // Mode création
+        document.getElementById('faculteModalTitle').textContent = 'Créer une Faculté';
+        document.getElementById('faculteSubmitText').textContent = 'Créer';
+        document.getElementById('faculteForm').reset();
+        document.getElementById('faculteId').value = '';
+    }
+    
+    modal.show();
+}
+
+function loadFaculteData(faculteId) {
+    fetch(`/admin/facultes/${faculteId}/data/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('faculteId').value = data.id;
+            document.getElementById('faculteCode').value = data.code;
+            document.getElementById('faculteNom').value = data.nom;
+            document.getElementById('faculteDescription').value = data.description || '';
+            document.getElementById('faculteActive').checked = data.is_active;
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement des données');
+        });
+}
+
+function openDeleteFaculteModal(faculteId, code, nom) {
+    currentFaculteId = faculteId;
+    document.getElementById('deleteFaculteInfo').textContent = `${code} - ${nom}`;
+    document.getElementById('deleteFaculteDetails').textContent = 'Cette faculté sera définitivement supprimée.';
+    
+    const modal = new bootstrap.Modal(document.getElementById('deleteFaculteModal'));
+    modal.show();
+}
+
+// ===== GESTION DES PROMOTIONS =====
+
+function openPromotionModal(promotionId = null) {
+    currentPromotionId = promotionId;
+    const modal = new bootstrap.Modal(document.getElementById('promotionModal'));
+    
+    if (promotionId) {
+        // Mode édition
+        document.getElementById('promotionModalTitle').textContent = 'Modifier la Promotion';
+        document.getElementById('promotionSubmitText').textContent = 'Modifier';
+        loadPromotionData(promotionId);
+    } else {
+        // Mode création
+        document.getElementById('promotionModalTitle').textContent = 'Créer une Promotion';
+        document.getElementById('promotionSubmitText').textContent = 'Créer';
+        document.getElementById('promotionForm').reset();
+        document.getElementById('promotionId').value = '';
+    }
+    
+    modal.show();
+}
+
+function loadPromotionData(promotionId) {
+    fetch(`/admin/promotions/${promotionId}/data/`)
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById('promotionId').value = data.id;
+            document.getElementById('promotionAnneeDebut').value = data.annee_debut;
+            document.getElementById('promotionAnneeFin').value = data.annee_fin;
+            document.getElementById('promotionActive').checked = data.is_active;
+            updatePromotionPreview();
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            alert('Erreur lors du chargement des données');
+        });
+}
+
+function openDeletePromotionModal(promotionId, nomComplet) {
+    currentPromotionId = promotionId;
+    document.getElementById('deletePromotionInfo').textContent = nomComplet;
+    document.getElementById('deletePromotionDetails').textContent = 'Cette promotion sera définitivement supprimée.';
+    
+    const modal = new bootstrap.Modal(document.getElementById('deletePromotionModal'));
+    modal.show();
+}
+
+// ===== FONCTIONS UTILITAIRES =====
+
+function updatePromotionPreview() {
+    const anneeDebut = document.getElementById('promotionAnneeDebut').value;
+    const anneeFin = document.getElementById('promotionAnneeFin').value;
+    const preview = document.getElementById('promotionPreview');
+    
+    if (anneeDebut && anneeFin) {
+        preview.textContent = `${anneeDebut}-${anneeFin}`;
+    } else {
+        preview.textContent = 'Sélectionnez les années';
+    }
+}
+
+function searchFacultes() {
+    const search = document.getElementById('faculteSearch').value;
+    const status = document.getElementById('faculteStatusFilter').value;
+    loadFacultesTable(search, status);
+}
+
+function searchPromotions() {
+    const search = document.getElementById('promotionSearch').value;
+    const status = document.getElementById('promotionStatusFilter').value;
+    loadPromotionsTable(search, status);
+}
+
+function loadFacultesTable(search = '', status = '') {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    
+    fetch(`/admin/facultes/table/?${params}`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('facultesTable').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            document.getElementById('facultesTable').innerHTML = '<div class="text-center py-4 text-danger">Erreur lors du chargement</div>';
+        });
+}
+
+function loadPromotionsTable(search = '', status = '') {
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (status) params.append('status', status);
+    
+    fetch(`/admin/promotions/table/?${params}`)
+        .then(response => response.text())
+        .then(html => {
+            document.getElementById('promotionsTable').innerHTML = html;
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            document.getElementById('promotionsTable').innerHTML = '<div class="text-center py-4 text-danger">Erreur lors du chargement</div>';
+        });
+}
+
+// ===== ÉVÉNEMENTS =====
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Charger les données initiales
+    loadFacultesTable();
+    
+    // Charger les promotions quand on clique sur l'onglet
+    document.getElementById('promotions-tab').addEventListener('click', function() {
+        loadPromotionsTable();
+    });
+    
+    // Auto-calcul pour les promotions
+    document.getElementById('promotionAnneeDebut').addEventListener('input', function() {
+        const anneeDebut = parseInt(this.value);
+        const anneeFin = document.getElementById('promotionAnneeFin');
+        if (anneeDebut && !anneeFin.value) {
+            anneeFin.value = anneeDebut + 1;
+        }
+        updatePromotionPreview();
+    });
+    
+    document.getElementById('promotionAnneeFin').addEventListener('input', updatePromotionPreview);
+    
+    // Auto-uppercase pour le code faculté
+    document.getElementById('faculteCode').addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+    
+    // Événements pour les boutons de recherche des promotions
+    document.getElementById('promotionSearch').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            searchPromotions();
+        }
+    });
+    
+    document.getElementById('promotionStatusFilter').addEventListener('change', function() {
+        searchPromotions();
+    });
+    
+    // Soumission des formulaires
+    document.getElementById('faculteForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitFaculteForm();
+    });
+    
+    document.getElementById('promotionForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        submitPromotionForm();
+    });
+    
+    // Confirmations de suppression
+    document.getElementById('confirmDeleteFaculte').addEventListener('click', function() {
+        deleteFaculte(currentFaculteId);
+    });
+    
+    document.getElementById('confirmDeletePromotion').addEventListener('click', function() {
+        deletePromotion(currentPromotionId);
+    });
+});
+
+// ===== SOUMISSION DES FORMULAIRES =====
+
+function submitFaculteForm() {
+    const formData = new FormData(document.getElementById('faculteForm'));
+    const url = currentFaculteId ? `/admin/facultes/${currentFaculteId}/edit/` : '/admin/facultes/create/';
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('faculteModal')).hide();
+            loadFacultesTable();
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showAlert('danger', 'Erreur lors de la sauvegarde');
+    });
+}
+
+function submitPromotionForm() {
+    const formData = new FormData(document.getElementById('promotionForm'));
+    const url = currentPromotionId ? `/admin/promotions/${currentPromotionId}/edit/` : '/admin/promotions/create/';
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('promotionModal')).hide();
+            loadPromotionsTable();
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showAlert('danger', 'Erreur lors de la sauvegarde');
+    });
+}
+
+function deleteFaculte(faculteId) {
+    fetch(`/admin/facultes/${faculteId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('deleteFaculteModal')).hide();
+            loadFacultesTable();
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showAlert('danger', 'Erreur lors de la suppression');
+    });
+}
+
+function deletePromotion(promotionId) {
+    fetch(`/admin/promotions/${promotionId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            bootstrap.Modal.getInstance(document.getElementById('deletePromotionModal')).hide();
+            loadPromotionsTable();
+            showAlert('success', data.message);
+        } else {
+            showAlert('danger', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Erreur:', error);
+        showAlert('danger', 'Erreur lors de la suppression');
+    });
+}
+
+function showAlert(type, message) {
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+    alertDiv.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.insertBefore(alertDiv, document.body.firstChild);
+    
+    setTimeout(() => {
+        alertDiv.remove();
+    }, 5000);
+}
+</script>
+{% endblock %}

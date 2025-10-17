@@ -1,0 +1,121 @@
+<!-- Modal: Soumettre/Modifier le sujet -->
+<div class="modal fade" id="modalSoumettreSujet" tabindex="-1" aria-labelledby="modalSoumettreLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 600px;">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: var(--uom-blue); color: white;">
+                <h5 class="modal-title" id="modalSoumettreLabel">
+                    <i class="bi bi-journal-plus"></i> 
+                    {% if memoire and memoire.statut in 'brouillon refuse' %}Modifier{% else %}Soumettre{% endif %} mon sujet de mémoire
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'memoires:student_soumettre_sujet' %}">
+                {% csrf_token %}
+                <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                    <div class="mb-3">
+                        <label for="titre" class="form-label"><strong>Titre du mémoire <span class="text-danger">*</span></strong></label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="titre" 
+                            name="titre" 
+                            required
+                            maxlength="500"
+                            value="{% if memoire %}{{ memoire.titre }}{% endif %}"
+                            placeholder="Ex: Système de gestion de bibliothèque universitaire"
+                        >
+                        <small class="text-muted">Maximum 500 caractères</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="domaine" class="form-label"><strong>Domaine <span class="text-danger">*</span></strong></label>
+                        <select class="form-select" id="domaine" name="domaine" required>
+                            <option value="">Sélectionnez un domaine</option>
+                            <option value="informatique" {% if memoire and memoire.domaine == 'informatique' %}selected{% endif %}>Informatique</option>
+                            <option value="genie_civil" {% if memoire and memoire.domaine == 'genie_civil' %}selected{% endif %}>Génie Civil</option>
+                            <option value="gestion" {% if memoire and memoire.domaine == 'gestion' %}selected{% endif %}>Gestion</option>
+                            <option value="droit" {% if memoire and memoire.domaine == 'droit' %}selected{% endif %}>Droit</option>
+                            <option value="sciences" {% if memoire and memoire.domaine == 'sciences' %}selected{% endif %}>Sciences</option>
+                            <option value="lettres" {% if memoire and memoire.domaine == 'lettres' %}selected{% endif %}>Lettres</option>
+                            <option value="economie" {% if memoire and memoire.domaine == 'economie' %}selected{% endif %}>Économie</option>
+                            <option value="autre" {% if memoire and memoire.domaine == 'autre' %}selected{% endif %}>Autre</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3" id="domaineAutreDiv" style="display: {% if memoire and memoire.domaine == 'autre' %}block{% else %}none{% endif %};">
+                        <label for="domaine_autre" class="form-label"><strong>Précisez le domaine</strong></label>
+                        <input 
+                            type="text" 
+                            class="form-control" 
+                            id="domaine_autre" 
+                            name="domaine_autre"
+                            value="{% if memoire %}{{ memoire.domaine_autre }}{% endif %}"
+                            placeholder="Précisez votre domaine d'étude"
+                        >
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="description" class="form-label"><strong>Description détaillée <span class="text-danger">*</span></strong></label>
+                        <textarea 
+                            class="form-control" 
+                            id="description" 
+                            name="description" 
+                            rows="3" 
+                            required
+                            placeholder="Décrivez votre sujet de mémoire..."
+                        >{% if memoire %}{{ memoire.description }}{% endif %}</textarea>
+                        <small class="text-muted">Contexte et problématique</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="objectifs" class="form-label"><strong>Objectifs <span class="text-danger">*</span></strong></label>
+                        <textarea 
+                            class="form-control" 
+                            id="objectifs" 
+                            name="objectifs" 
+                            rows="3" 
+                            required
+                            placeholder="Objectifs principaux..."
+                        >{% if memoire %}{{ memoire.objectifs }}{% endif %}</textarea>
+                        <small class="text-muted">Résultats attendus</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="commentaire_etudiant" class="form-label"><strong>Commentaire</strong> (optionnel)</label>
+                        <textarea 
+                            class="form-control" 
+                            id="commentaire_etudiant" 
+                            name="commentaire_etudiant" 
+                            rows="2"
+                            placeholder="Informations complémentaires..."
+                        >{% if memoire %}{{ memoire.commentaire_etudiant }}{% endif %}</textarea>
+                    </div>
+
+                    <div class="alert alert-info py-2">
+                        <small><i class="bi bi-info-circle"></i> Votre sujet sera validé par l'administration avant de continuer.</small>
+                    </div>
+                </div>
+                <div class="modal-footer" style="background-color: #f8f9fa; border-top: 2px solid var(--uom-blue);">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle"></i> Annuler
+                    </button>
+                    <button type="submit" class="btn btn-uom-primary btn-lg">
+                        <i class="bi bi-send"></i> Soumettre pour validation
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('domaine').addEventListener('change', function() {
+    const domaineAutreDiv = document.getElementById('domaineAutreDiv');
+    if (this.value === 'autre') {
+        domaineAutreDiv.style.display = 'block';
+    } else {
+        domaineAutreDiv.style.display = 'none';
+    }
+});
+</script>
+

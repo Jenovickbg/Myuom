@@ -1,0 +1,147 @@
+{% extends 'users/base.html' %}
+{% load static %}
+
+{% block title %}Gestion des Mémoires - Admin - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <h2 class="mb-4" style="color: var(--uom-blue);">
+        <i class="bi bi-journal-text"></i> Gestion des Mémoires
+    </h2>
+
+    <!-- Filtres -->
+    <div class="card card-uom mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Rechercher</label>
+                    <input type="text" name="search" class="form-control" value="{{ search_query }}" placeholder="Titre, étudiant...">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Statut</label>
+                    <select name="statut" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="soumis" {% if statut_filter == 'soumis' %}selected{% endif %}>Soumis</option>
+                        <option value="valide" {% if statut_filter == 'valide' %}selected{% endif %}>Validé</option>
+                        <option value="refuse" {% if statut_filter == 'refuse' %}selected{% endif %}>Refusé</option>
+                        <option value="termine" {% if statut_filter == 'termine' %}selected{% endif %}>Terminé</option>
+                        <option value="certifie" {% if statut_filter == 'certifie' %}selected{% endif %}>Certifié</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Niveau</label>
+                    <select name="niveau" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="L3" {% if niveau_filter == 'L3' %}selected{% endif %}>L3</option>
+                        <option value="M2" {% if niveau_filter == 'M2' %}selected{% endif %}>M2</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-uom-primary me-2"><i class="bi bi-search"></i> Filtrer</button>
+                    <a href="{% url 'memoires:admin_memoires_list' %}" class="btn btn-outline-secondary"><i class="bi bi-x-circle"></i> Réinitialiser</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Liste des mémoires -->
+    <div class="card card-uom">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Étudiant</th>
+                            <th>Titre</th>
+                            <th>Domaine</th>
+                            <th>Niveau</th>
+                            <th>Statut</th>
+                            <th>Date soumission</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for mem in memoires %}
+                        <tr>
+                            <td>
+                                <strong>{{ mem.etudiant.get_full_name }}</strong><br>
+                                <small class="text-muted">{{ mem.etudiant.matricule }}</small>
+                            </td>
+                            <td>
+                                <strong>{{ mem.titre|truncatewords:8 }}</strong>
+                                {% if mem.directeur %}
+                                    <br><small class="text-muted">Dir: {{ mem.directeur.last_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ mem.get_domaine_display }}</td>
+                            <td><span class="badge bg-secondary">{{ mem.get_niveau_etudiant }}</span></td>
+                            <td>
+                                {% if mem.statut == 'soumis' %}
+                                    <span class="badge bg-info">Soumis</span>
+                                {% elif mem.statut == 'valide' %}
+                                    <span class="badge bg-success">Validé</span>
+                                {% elif mem.statut == 'refuse' %}
+                                    <span class="badge bg-danger">Refusé</span>
+                                {% elif mem.statut == 'termine' %}
+                                    <span class="badge bg-primary">Terminé</span>
+                                {% elif mem.statut == 'certifie' %}
+                                    <span class="badge bg-success"><i class="bi bi-award"></i> Certifié</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ mem.date_soumission_sujet|date:"d/m/Y" }}</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" 
+                                        onclick="voirDetails({{ mem.id }})" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#modalDetails{{ mem.id }}">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                                {% if mem.statut == 'soumis' %}
+                                    <a href="{% url 'memoires:admin_valider_memoire' mem.id %}" class="btn btn-sm btn-uom-primary">
+                                        <i class="bi bi-check-circle"></i> Valider
+                                    </a>
+                                {% endif %}
+                            </td>
+                        </tr>
+
+                        <!-- Modal détails -->
+                        <div class="modal fade" id="modalDetails{{ mem.id }}" tabindex="-1">
+                            <div class="modal-dialog modal-lg">
+                                <div class="modal-content">
+                                    <div class="modal-header" style="background-color: var(--uom-blue); color: white;">
+                                        <h5 class="modal-title">Détails du mémoire</h5>
+                                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <h6><strong>{{ mem.titre }}</strong></h6>
+                                        <p><strong>Description:</strong> {{ mem.description }}</p>
+                                        <p><strong>Objectifs:</strong> {{ mem.objectifs }}</p>
+                                        <hr>
+                                        <p><strong>Domaine:</strong> {{ mem.get_domaine_display }}</p>
+                                        <p><strong>Directeur:</strong> {% if mem.directeur %}{{ mem.directeur.get_full_name }}{% else %}Non attribué{% endif %}</p>
+                                        <p><strong>Encadreur:</strong> {% if mem.encadreur %}{{ mem.encadreur.get_full_name }}{% else %}Non attribué{% endif %}</p>
+                                        {% if mem.fichier_memoire %}
+                                            <p><strong>Fichier:</strong> <a href="{{ mem.fichier_memoire.url }}" target="_blank">Télécharger PDF</a></p>
+                                        {% endif %}
+                                        {% if mem.plagiat_verifie %}
+                                            <p><strong>Score plagiat:</strong> <span class="{% if mem.score_plagiat < 20 %}text-success{% else %}text-warning{% endif %}">{{ mem.score_plagiat|floatformat:2 }}%</span></p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center text-muted">Aucun mémoire trouvé</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+
+

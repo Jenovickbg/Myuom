@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'cours',
     'travaux',
     'resultats',
+    'memoires',
 ]
 
 # Configuration du modèle utilisateur personnalisé

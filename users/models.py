@@ -323,3 +323,108 @@ class TeacherProfile(models.Model):
     
     def __str__(self):
         return f"Profil de {self.user.get_display_name()}"
+
+
+class FraisAcademique(models.Model):
+    """
+    Modèle pour gérer les frais académiques des étudiants
+    """
+    etudiant = models.ForeignKey(
+        CustomUser,
+        on_delete=models.CASCADE,
+        related_name='frais_academiques',
+        limit_choices_to={'user_type': 'etudiant'},
+        help_text="Étudiant concerné"
+    )
+    
+    annee_academique = models.CharField(
+        max_length=20,
+        help_text="Année académique (ex: 2023-2024)"
+    )
+    
+    montant_total = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        help_text="Montant total des frais en USD"
+    )
+    
+    montant_paye = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="Montant déjà payé en USD"
+    )
+    
+    date_paiement = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Date du dernier paiement"
+    )
+    
+    mode_paiement = models.CharField(
+        max_length=50,
+        blank=True,
+        choices=[
+            ('espece', 'Espèces'),
+            ('carte', 'Carte bancaire'),
+            ('virement', 'Virement bancaire'),
+            ('mobile', 'Mobile money'),
+        ],
+        help_text="Mode de paiement"
+    )
+    
+    reference_paiement = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Référence du paiement"
+    )
+    
+    statut = models.CharField(
+        max_length=20,
+        choices=[
+            ('non_paye', 'Non payé'),
+            ('partiel', 'Paiement partiel'),
+            ('complet', 'Payé'),
+        ],
+        default='non_paye',
+        help_text="Statut du paiement"
+    )
+    
+    remarques = models.TextField(
+        blank=True,
+        help_text="Remarques ou notes"
+    )
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Frais Académique"
+        verbose_name_plural = "Frais Académiques"
+        ordering = ['-annee_academique', 'etudiant']
+        unique_together = ['etudiant', 'annee_academique']
+    
+    def __str__(self):
+        return f"{self.etudiant.matricule} - {self.annee_academique} - {self.get_statut_display()}"
+    
+    @property
+    def montant_restant(self):
+        """Calcule le montant restant à payer"""
+        return self.montant_total - self.montant_paye
+    
+    @property
+    def pourcentage_paye(self):
+        """Calcule le pourcentage payé"""
+        if self.montant_total > 0:
+            return (self.montant_paye / self.montant_total) * 100
+        return 0
+    
+    def save(self, *args, **kwargs):
+        """Met à jour le statut automatiquement"""
+        if self.montant_paye >= self.montant_total:
+            self.statut = 'complet'
+        elif self.montant_paye > 0:
+            self.statut = 'partiel'
+        else:
+            self.statut = 'non_paye'
+        super().save(*args, **kwargs)
