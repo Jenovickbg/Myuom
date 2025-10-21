@@ -1,0 +1,154 @@
+{% extends 'users/base.html' %}
+
+{% block title %}{% if support %}Modifier{% else %}Publier{% endif %} un Support - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 style="color: var(--uom-blue);">
+                <i class="bi bi-file-earmark-arrow-up"></i> 
+                {% if support %}Modifier le Support{% else %}Publier un Support{% endif %}
+            </h2>
+            <p class="text-muted">
+                Cours : <strong>{{ cours.code }} - {{ cours.titre }}</strong>
+            </p>
+            <hr>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--uom-blue), #1a5490); color: white;">
+                    <h5 class="mb-0">
+                        <i class="bi bi-pencil-square"></i> 
+                        {% if support %}Modifier les informations{% else %}Informations du support{% endif %}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Titre -->
+                        <div class="mb-3">
+                            <label for="titre" class="form-label">
+                                <i class="bi bi-pencil"></i> Titre du support <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="titre" 
+                                   name="titre" 
+                                   value="{% if support %}{{ support.titre }}{% endif %}"
+                                   placeholder="Ex: Chapitre 1 - Introduction à l'algorithme"
+                                   required>
+                            <small class="text-muted">Donnez un titre clair et descriptif à votre support</small>
+                        </div>
+
+                        <!-- Type de support -->
+                        <div class="mb-3">
+                            <label for="type_support" class="form-label">
+                                <i class="bi bi-tag"></i> Type de support
+                            </label>
+                            <select class="form-select" id="type_support" name="type_support">
+                                <option value="cours" {% if support and support.type_support == 'cours' %}selected{% endif %}>Support de cours</option>
+                                <option value="tp" {% if support and support.type_support == 'tp' %}selected{% endif %}>TP</option>
+                                <option value="td" {% if support and support.type_support == 'td' %}selected{% endif %}>TD</option>
+                                <option value="corrige" {% if support and support.type_support == 'corrige' %}selected{% endif %}>Corrigé</option>
+                                <option value="autre" {% if support and support.type_support == 'autre' %}selected{% endif %}>Autre</option>
+                            </select>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="mb-3">
+                            <label for="description" class="form-label">
+                                <i class="bi bi-text-paragraph"></i> Description
+                            </label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="4"
+                                      placeholder="Décrivez le contenu de ce support (optionnel)">{% if support %}{{ support.description }}{% endif %}</textarea>
+                            <small class="text-muted">Cette description aidera les étudiants à comprendre le contenu</small>
+                        </div>
+
+                        <!-- Fichier -->
+                        <div class="mb-3">
+                            <label for="fichier" class="form-label">
+                                <i class="bi bi-file-earmark-pdf"></i> Fichier {% if not support %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            <input type="file" 
+                                   class="form-control" 
+                                   id="fichier" 
+                                   name="fichier"
+                                   accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip"
+                                   {% if not support %}required{% endif %}>
+                            {% if support %}
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    Fichier actuel : <strong>{{ support.fichier.name|default:"Aucun" }}</strong>
+                                </small>
+                                <br>
+                                <small class="text-muted">Laissez vide pour conserver le fichier actuel</small>
+                            </div>
+                            {% else %}
+                            <small class="text-muted">Formats acceptés : PDF, Word, PowerPoint, Excel, ZIP</small>
+                            {% endif %}
+                        </div>
+
+                        <!-- Visibilité -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" 
+                                       type="checkbox" 
+                                       id="is_public" 
+                                       name="is_public"
+                                       {% if not support or support.is_public %}checked{% endif %}>
+                                <label class="form-check-label" for="is_public">
+                                    <i class="bi bi-eye"></i> Visible pour les étudiants
+                                </label>
+                            </div>
+                            <small class="text-muted">Si désactivé, le support sera masqué aux étudiants</small>
+                        </div>
+
+                        <!-- Boutons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-circle"></i> 
+                                {% if support %}Enregistrer les modifications{% else %}Publier le support{% endif %}
+                            </button>
+                            <a href="{% url 'cours:teacher_cours_detail' cours.id %}" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: var(--uom-blue);
+    }
+    
+    .form-control:focus, .form-select:focus {
+        border-color: var(--uom-blue);
+        box-shadow: 0 0 0 0.2rem rgba(0, 74, 173, 0.25);
+    }
+    
+    .form-check-input:checked {
+        background-color: var(--uom-blue);
+        border-color: var(--uom-blue);
+    }
+</style>
+{% endblock %}
+

@@ -159,18 +159,61 @@
                         {% if supports_cours %}
                             <div class="list-group">
                                 {% for support in supports_cours %}
-                                    <a href="{{ support.fichier.url }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
-                                        <div>
-                                            <i class="bi bi-file-earmark-text"></i> {{ support.titre }}
-                                            <small class="text-muted d-block">{{ support.get_type_support_display }} - Publié le {{ support.date_publication|date:"d/m/Y" }}</small>
+                                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <!-- Icône selon le type de fichier -->
+                                                {% if support.fichier.name|lower|slice:"-4:" == '.pdf' %}
+                                                    <i class="bi bi-file-earmark-pdf text-danger fs-4"></i>
+                                                {% elif support.fichier.name|lower|slice:"-5:" == '.docx' or support.fichier.name|lower|slice:"-4:" == '.doc' %}
+                                                    <i class="bi bi-file-earmark-word text-primary fs-4"></i>
+                                                {% elif support.fichier.name|lower|slice:"-5:" == '.pptx' or support.fichier.name|lower|slice:"-4:" == '.ppt' %}
+                                                    <i class="bi bi-file-earmark-ppt text-warning fs-4"></i>
+                                                {% elif support.fichier.name|lower|slice:"-4:" == '.zip' %}
+                                                    <i class="bi bi-file-earmark-zip text-secondary fs-4"></i>
+                                                {% else %}
+                                                    <i class="bi bi-file-earmark-text text-info fs-4"></i>
+                                                {% endif %}
+                                                
+                                                <div>
+                                                    <h6 class="mb-0">{{ support.titre }}</h6>
+                                                    <small class="text-muted">
+                                                        <span class="badge bg-primary">{{ support.get_type_support_display }}</span>
+                                                        Publié le {{ support.date_publication|date:"d/m/Y" }}
+                                                        • {{ support.taille_fichier|filesizeformat }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                            {% if support.description %}
+                                            <p class="mb-0 mt-2 text-muted small">{{ support.description|truncatewords:30 }}</p>
+                                            {% endif %}
                                         </div>
-                                        <span class="badge bg-secondary rounded-pill">{{ support.fichier.size|filesizeformat }}</span>
-                                    </a>
+                                        <div class="d-flex gap-2">
+                                            <!-- Bouton de téléchargement -->
+                                            <a href="{{ support.fichier.url }}" 
+                                               class="btn btn-primary btn-sm" 
+                                               download="{{ support.fichier.name }}"
+                                               title="Télécharger le fichier">
+                                                <i class="bi bi-download"></i> Télécharger
+                                            </a>
+                                            <!-- Bouton pour visualiser (si PDF) -->
+                                            {% if support.fichier.name|lower|slice:"-4:" == '.pdf' %}
+                                            <a href="{{ support.fichier.url }}" 
+                                               class="btn btn-outline-secondary btn-sm" 
+                                               target="_blank"
+                                               title="Ouvrir dans un nouvel onglet">
+                                                <i class="bi bi-eye"></i> Voir
+                                            </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 {% endfor %}
                             </div>
                         {% else %}
                             <div class="alert alert-info text-center">
-                                Aucun fichier disponible pour le moment.
+                                <i class="bi bi-info-circle fs-1"></i>
+                                <p class="mt-3 mb-0">Aucun fichier disponible pour le moment.</p>
+                                <small class="text-muted">Votre enseignant publiera bientôt des supports de cours.</small>
                             </div>
                         {% endif %}
                     </div>
@@ -329,6 +372,27 @@
 
 .info-item:last-child {
     border-bottom: none;
+}
+
+/* Style pour les fichiers */
+.list-group-item {
+    transition: all 0.3s ease;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    transform: translateX(5px);
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--uom-blue), #1a5490);
+    border: none;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1a5490, var(--uom-blue));
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 74, 173, 0.3);
 }
 </style>
 

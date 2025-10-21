@@ -1,0 +1,107 @@
+{% extends 'users/base.html' %}
+
+{% block title %}Publier un Support - MyUOM{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 style="color: var(--uom-blue);">
+                <i class="bi bi-file-earmark-arrow-up"></i> Publier un Support de Cours
+            </h2>
+            <p class="text-muted">Sélectionnez le cours pour lequel vous souhaitez publier un support</p>
+            <hr>
+        </div>
+    </div>
+
+    {% if cours_list %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--uom-blue), #1a5490); color: white;">
+                    <h5 class="mb-0"><i class="bi bi-book"></i> Mes Cours</h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead style="background-color: #f8f9fa;">
+                                <tr>
+                                    <th>Code</th>
+                                    <th>Titre</th>
+                                    <th>Niveau</th>
+                                    <th>Filière</th>
+                                    <th>Type</th>
+                                    <th>Crédits</th>
+                                    <th class="text-center">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for cours in cours_list %}
+                                <tr>
+                                    <td><strong>{{ cours.code }}</strong></td>
+                                    <td>{{ cours.titre }}</td>
+                                    <td>
+                                        <span class="badge" style="background-color: var(--uom-blue);">
+                                            {{ cours.get_niveau_display }}
+                                        </span>
+                                    </td>
+                                    <td>{{ cours.filiere }}</td>
+                                    <td>{{ cours.get_type_cours_display }}</td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ cours.credits }} ECTS</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="{% url 'cours:teacher_support_create' cours.id %}" 
+                                           class="btn btn-sm btn-primary">
+                                            <i class="bi bi-plus-circle"></i> Publier Support
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="alert alert-info text-center">
+                <i class="bi bi-info-circle fs-1"></i>
+                <p class="mt-3 mb-0">Vous n'avez aucun cours actif pour le moment.</p>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row mt-4">
+        <div class="col-12">
+            <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Retour au tableau de bord
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 74, 173, 0.05);
+        cursor: pointer;
+    }
+    
+    .card {
+        border: none;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+    
+    .table th {
+        border-bottom: 2px solid var(--uom-blue);
+        font-weight: 600;
+        color: var(--uom-blue);
+    }
+</style>
+{% endblock %}
+

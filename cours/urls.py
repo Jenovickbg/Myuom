@@ -17,6 +17,13 @@ urlpatterns = [
     path('teacher/cours/<int:cours_id>/', views.teacher_cours_detail, name='teacher_cours_detail'),
     path('teacher/cours/create/', views.teacher_cours_create, name='teacher_cours_create'),
     
+    # Publication de supports (Enseignant)
+    path('teacher/supports/selection/', views.teacher_support_cours_selection, name='teacher_support_cours_selection'),
+    path('teacher/supports/<int:cours_id>/create/', views.teacher_support_create, name='teacher_support_create'),
+    path('teacher/supports/<int:support_id>/edit/', views.teacher_support_edit, name='teacher_support_edit'),
+    path('teacher/supports/<int:support_id>/delete/', views.teacher_support_delete, name='teacher_support_delete'),
+    path('teacher/supports/<int:support_id>/toggle/', views.teacher_support_toggle_visibility, name='teacher_support_toggle_visibility'),
+    
     # Vues étudiant
     path('student/cours/', views.student_cours_list, name='student_cours_list'),
     path('student/cours/<int:cours_id>/', views.student_cours_detail, name='student_cours_detail'),

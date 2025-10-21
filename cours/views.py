@@ -333,16 +333,10 @@ def teacher_cours_detail(request, cours_id):
     except Exception as e:
         messages.info(request, "La section des travaux n'est pas encore disponible.")
 
-    # Récupérer les supports de cours
-    supports_cours = []
-    try:
-        from cours.models import SupportCours
-        supports_cours = SupportCours.objects.filter(
-            cours=cours,
-            is_public=True
-        ).order_by('ordre_affichage', '-date_publication')
-    except Exception:
-        pass
+    # Récupérer les supports de cours (tous les supports pour l'enseignant)
+    supports_cours = SupportCours.objects.filter(
+        cours=cours
+    ).order_by('ordre_affichage', '-date_publication')
 
     # Statistiques
     total_travaux = len(travaux_ouverts) + len(travaux_fermes) + len(travaux_termines)
@@ -503,3 +497,124 @@ def student_cours_inscription(request, cours_id):
     
     messages.success(request, f"Vous êtes maintenant inscrit au cours {cours.code}.")
     return redirect('cours:student_cours_detail', cours_id=cours_id)
+
+
+# ======================== VUES PUBLICATION SUPPORTS (ENSEIGNANT) ========================
+
+@login_required
+def teacher_support_cours_selection(request):
+    """Sélection du cours pour publier un support"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    # Récupérer les cours de l'enseignant
+    cours = Cours.objects.filter(enseignant=request.user, is_actif=True).order_by('code')
+    
+    return render(request, 'cours/teacher_support_selection.html', {
+        'cours_list': cours,
+    })
+
+
+@login_required
+def teacher_support_create(request, cours_id):
+    """Création d'un nouveau support de cours"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    # Vérifier que le cours appartient à l'enseignant
+    cours = get_object_or_404(Cours, id=cours_id, enseignant=request.user)
+    
+    if request.method == 'POST':
+        titre = request.POST.get('titre')
+        description = request.POST.get('description', '')
+        type_support = request.POST.get('type_support', 'cours')
+        fichier = request.FILES.get('fichier')
+        is_public = request.POST.get('is_public') == 'on'
+        
+        if not titre or not fichier:
+            messages.error(request, "Le titre et le fichier sont obligatoires.")
+            return render(request, 'cours/teacher_support_form.html', {
+                'cours': cours,
+            })
+        
+        # Créer le support
+        support = SupportCours.objects.create(
+            titre=titre,
+            description=description,
+            type_support=type_support,
+            fichier=fichier,
+            cours=cours,
+            enseignant=request.user,
+            is_public=is_public
+        )
+        
+        messages.success(request, f"Support '{titre}' publié avec succès pour le cours {cours.code}.")
+        return redirect('cours:teacher_cours_detail', cours_id=cours_id)
+    
+    return render(request, 'cours/teacher_support_form.html', {
+        'cours': cours,
+    })
+
+
+@login_required
+def teacher_support_edit(request, support_id):
+    """Modification d'un support de cours"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    support = get_object_or_404(SupportCours, id=support_id, enseignant=request.user)
+    
+    if request.method == 'POST':
+        support.titre = request.POST.get('titre', support.titre)
+        support.description = request.POST.get('description', support.description)
+        support.type_support = request.POST.get('type_support', support.type_support)
+        support.is_public = request.POST.get('is_public') == 'on'
+        
+        if 'fichier' in request.FILES:
+            support.fichier = request.FILES['fichier']
+        
+        support.save()
+        
+        messages.success(request, f"Support '{support.titre}' modifié avec succès.")
+        return redirect('cours:teacher_cours_detail', cours_id=support.cours.id)
+    
+    return render(request, 'cours/teacher_support_form.html', {
+        'cours': support.cours,
+        'support': support,
+    })
+
+
+@login_required
+def teacher_support_delete(request, support_id):
+    """Suppression d'un support de cours"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    support = get_object_or_404(SupportCours, id=support_id, enseignant=request.user)
+    cours_id = support.cours.id
+    titre = support.titre
+    
+    support.delete()
+    
+    messages.success(request, f"Support '{titre}' supprimé avec succès.")
+    return redirect('cours:teacher_cours_detail', cours_id=cours_id)
+
+
+@login_required
+def teacher_support_toggle_visibility(request, support_id):
+    """Basculer la visibilité d'un support"""
+    if not request.user.is_teacher_user():
+        messages.error(request, "Accès non autorisé.")
+        return redirect('login')
+    
+    support = get_object_or_404(SupportCours, id=support_id, enseignant=request.user)
+    support.is_public = not support.is_public
+    support.save()
+    
+    status = "visible" if support.is_public else "masqué"
+    messages.success(request, f"Support '{support.titre}' maintenant {status} pour les étudiants.")
+    return redirect('cours:teacher_cours_detail', cours_id=support.cours.id)

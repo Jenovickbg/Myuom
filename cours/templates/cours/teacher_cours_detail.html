@@ -194,25 +194,73 @@
     <!-- Supports de cours -->
     <div class="col-12">
       <div class="card card-uom">
-        <div class="card-header card-header-uom">
-          <i class="bi bi-folder"></i> Supports de Cours
+        <div class="card-header card-header-uom d-flex justify-content-between align-items-center">
+          <span><i class="bi bi-folder"></i> Supports de Cours</span>
+          <a href="{% url 'cours:teacher_support_create' cours.id %}" class="btn btn-sm btn-light">
+            <i class="bi bi-plus-circle"></i> Ajouter un support
+          </a>
         </div>
         <div class="card-body">
           {% if supports_cours %}
             <div class="list-group">
               {% for support in supports_cours %}
-                <a href="{{ support.fichier.url }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" target="_blank">
-                  <div>
-                    <i class="bi bi-file-earmark-text"></i> {{ support.titre }}
-                    <small class="text-muted d-block">{{ support.get_type_support_display }} - Publié le {{ support.date_publication|date:"d/m/Y" }}</small>
+                <div class="list-group-item d-flex justify-content-between align-items-center">
+                  <div class="flex-grow-1">
+                    <div class="d-flex align-items-center gap-2">
+                      <i class="bi bi-file-earmark-pdf text-danger fs-4"></i>
+                      <div>
+                        <h6 class="mb-0">{{ support.titre }}</h6>
+                        <small class="text-muted">
+                          {{ support.get_type_support_display }} • 
+                          Publié le {{ support.date_publication|date:"d/m/Y" }} •
+                          {{ support.taille_fichier|filesizeformat }}
+                        </small>
+                      </div>
+                    </div>
+                    {% if support.description %}
+                    <p class="mb-0 mt-2 text-muted small">{{ support.description|truncatewords:20 }}</p>
+                    {% endif %}
                   </div>
-                  <span class="badge bg-secondary rounded-pill">{{ support.fichier.size|filesizeformat }}</span>
-                </a>
+                  <div class="d-flex gap-2 align-items-center">
+                    <!-- Badge de visibilité -->
+                    {% if support.is_public %}
+                      <span class="badge bg-success"><i class="bi bi-eye"></i> Visible</span>
+                    {% else %}
+                      <span class="badge bg-secondary"><i class="bi bi-eye-slash"></i> Masqué</span>
+                    {% endif %}
+                    
+                    <!-- Boutons d'action -->
+                    <div class="btn-group" role="group">
+                      <a href="{{ support.fichier.url }}" class="btn btn-sm btn-outline-primary" target="_blank" title="Télécharger">
+                        <i class="bi bi-download"></i>
+                      </a>
+                      <a href="{% url 'cours:teacher_support_edit' support.id %}" class="btn btn-sm btn-outline-warning" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                      </a>
+                      <a href="{% url 'cours:teacher_support_toggle_visibility' support.id %}" 
+                         class="btn btn-sm btn-outline-info" 
+                         title="{% if support.is_public %}Masquer{% else %}Rendre visible{% endif %}"
+                         onclick="return confirm('Voulez-vous {% if support.is_public %}masquer{% else %}rendre visible{% endif %} ce support ?');">
+                        <i class="bi bi-eye{% if not support.is_public %}-slash{% endif %}"></i>
+                      </a>
+                      <a href="{% url 'cours:teacher_support_delete' support.id %}" 
+                         class="btn btn-sm btn-outline-danger" 
+                         title="Supprimer"
+                         onclick="return confirm('Êtes-vous sûr de vouloir supprimer ce support ?');">
+                        <i class="bi bi-trash"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
               {% endfor %}
             </div>
           {% else %}
             <div class="alert alert-info text-center">
-              Aucun support de cours disponible pour le moment.
+              <i class="bi bi-info-circle fs-1"></i>
+              <p class="mt-3 mb-2">Aucun support de cours disponible pour le moment.</p>
+              <a href="{% url 'cours:teacher_support_create' cours.id %}" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> Publier mon premier support
+              </a>
             </div>
           {% endif %}
         </div>
